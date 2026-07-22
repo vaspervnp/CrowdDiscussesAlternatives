@@ -6,6 +6,7 @@ using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.References;
+using CDA.Infrastructure.Similarity;
 using CDA.Infrastructure.Topics;
 using CDA.Infrastructure.Voting;
 using CDA.Web.Models;
@@ -25,6 +26,8 @@ public sealed class ProposalsController(
     CommentService comments,
     ReferenceService references,
     ReferenceVotingService referenceVoting,
+    SimilarityService similarity,
+    SimilarityVotingService similarityVoting,
     IClock clock) : Controller
 {
     [HttpGet("")]
@@ -33,7 +36,9 @@ public sealed class ProposalsController(
         Guid topicId,
         ProposalSort sort = ProposalSort.Score,
         Guid? author = null,
-        string? cursor = null)
+        string? cursor = null,
+        bool? collapse = null,
+        int? threshold = null)
     {
         var (topic, viewer) = await LoadTopicAsync(topicId);
 
@@ -42,8 +47,14 @@ public sealed class ProposalsController(
             return NotFound();
         }
 
+        // Folding is off unless the reader turns it on, and the level is theirs: the platform
+        // reports similarity rather than deciding it, so nothing vanishes unasked.
+        var effectiveThreshold = collapse == true
+            ? threshold ?? topic.DefaultSimilarityThreshold
+            : (int?)null;
+
         var page = await proposals.ListAsync(
-            topicId, viewer, sort, author, cursor, HttpContext.RequestAborted);
+            topicId, viewer, sort, author, cursor, effectiveThreshold, HttpContext.RequestAborted);
 
         return View(new ProposalListViewModel
         {
@@ -60,6 +71,8 @@ public sealed class ProposalsController(
             CanAdd = topic.Phase == Domain.Topics.TopicPhase.Proposing
                 && !topic.IsClosedAt(clock.UtcNow)
                 && viewer.IsSignedIn,
+            Collapse = collapse == true,
+            Threshold = threshold ?? topic.DefaultSimilarityThreshold,
         });
     }
 
@@ -114,8 +127,65 @@ public sealed class ProposalsController(
             Proposal = proposal,
             Comments = await comments.ForProposalAsync(id, viewer, HttpContext.RequestAborted),
             References = await references.ForProposalAsync(id, viewer.UserId, HttpContext.RequestAborted),
+            Similarities = await similarity.ForProposalAsync(
+                id, viewer.UserId, topic.DefaultSimilarityThreshold, HttpContext.RequestAborted),
             CanCite = viewer.IsSignedIn && !topic.IsClosedAt(clock.UtcNow),
         });
+    }
+
+    [HttpPost("{id:guid}/similar")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReportSimilar(
+        Guid topicId,
+        Guid id,
+        Guid otherProposalId,
+        Guid? betterWrittenProposalId,
+        string? justification)
+    {
+        var (topic, viewer) = await LoadTopicAsync(topicId);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        var result = await similarity.ReportAsync(
+            topicId, id, otherProposalId, viewer.UserId!.Value,
+            betterWrittenProposalId, justification, HttpContext.RequestAborted);
+
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.Error;
+        }
+
+        return RedirectToAction(nameof(Details), new { topicId, id });
+    }
+
+    [HttpPost("{id:guid}/similar/{similarityId:guid}/vote")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VoteOnSimilarity(Guid topicId, Guid id, Guid similarityId, short value)
+    {
+        var (topic, viewer) = await LoadTopicAsync(topicId);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        // The report id comes from the route, so confirm it belongs to this topic.
+        var belongs = await database.SimilarityReports.AsNoTracking()
+            .AnyAsync(r => r.Id == similarityId && r.TopicId == topicId, HttpContext.RequestAborted);
+
+        if (!belongs)
+        {
+            return NotFound();
+        }
+
+        await similarityVoting.CastAsync(similarityId, viewer.UserId!.Value, value, HttpContext.RequestAborted);
+
+        return RedirectToAction(nameof(Details), new { topicId, id });
     }
 
     [HttpPost("{id:guid}/references")]

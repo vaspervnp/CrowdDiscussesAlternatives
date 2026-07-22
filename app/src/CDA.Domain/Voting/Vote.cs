@@ -1,4 +1,5 @@
 using CDA.Domain.References;
+using CDA.Domain.Similarity;
 
 namespace CDA.Domain.Voting;
 
@@ -44,6 +45,9 @@ public sealed class Vote
     public static Vote OnProposal(Guid proposalId, Guid userId, short value, DateTime castAtUtc) =>
         new(userId, value, castAtUtc) { ProposalId = proposalId };
 
+    public static Vote OnSimilarity(Guid similarityId, Guid userId, short value, DateTime castAtUtc) =>
+        new(userId, value, castAtUtc) { SimilarityId = similarityId };
+
     public static Vote OnReference(
         Guid referenceId,
         ReferenceAspect aspect,
@@ -73,6 +77,8 @@ public sealed class Vote
     public Guid? TopicId { get; private set; }
 
     public Guid? ProposalId { get; private set; }
+
+    public Guid? SimilarityId { get; private set; }
 
     public Guid? ReferenceId { get; private set; }
 

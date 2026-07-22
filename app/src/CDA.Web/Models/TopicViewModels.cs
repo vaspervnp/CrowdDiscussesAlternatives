@@ -5,6 +5,7 @@ using CDA.Domain.Topics;
 using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.References;
+using CDA.Infrastructure.Similarity;
 using CDA.Infrastructure.Topics;
 
 namespace CDA.Web.Models;
@@ -60,6 +61,12 @@ public sealed class ProposalListViewModel
     public string? NextCursor { get; init; }
 
     public required bool CanAdd { get; init; }
+
+    /// <summary>Whether the reader has asked for duplicates to be folded together.</summary>
+    public required bool Collapse { get; init; }
+
+    /// <summary>How much agreement a similarity report needs before it folds a pair, for this reader.</summary>
+    public required int Threshold { get; init; }
 }
 
 public sealed class ProposalDetailsViewModel
@@ -71,6 +78,8 @@ public sealed class ProposalDetailsViewModel
     public required IReadOnlyList<CommentView> Comments { get; init; }
 
     public required IReadOnlyList<ReferenceView> References { get; init; }
+
+    public required IReadOnlyList<SimilarityView> Similarities { get; init; }
 
     public required bool CanCite { get; init; }
 }

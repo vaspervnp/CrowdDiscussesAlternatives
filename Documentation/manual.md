@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 5**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 6**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -310,7 +310,61 @@ say in what gets read.
 
 ---
 
-## 8. Quick reference
+## 8. Duplicates
+
+With a large enough crowd, the same idea gets proposed several times in slightly different
+words. Left alone this is corrosive: support for one idea is divided between three entries, and
+each of them looks weaker than the idea actually is.
+
+**The platform never decides that two proposals are the same.** It gives people a way to say
+so, a way to disagree, and a dial for how much agreement each reader wants before duplicates
+are folded together for them.
+
+### Reporting a duplicate
+
+![A proposal reported as a duplicate of another](images/proposal-similar.png)
+
+Anyone can report a pair, optionally saying why and which of the two is better written. Nothing
+merges at that moment — a report is a claim, and other people vote **Yes**, **Unsure** or **No**
+on whether they agree.
+
+The pair is stored in a fixed order, so reporting "A is like B" and "B is like A" is the same
+claim. Otherwise the votes that decide whether it takes effect would be split across two rows —
+the very problem being solved.
+
+### Folding them together
+
+On the proposal list, **Fold duplicates together** turns folding on, and the number beside it
+is how many net votes of agreement a report needs before it counts *for you*.
+
+![The pool with duplicates folded together](images/proposals-collapsed.png)
+
+- Folding is **off by default**. Nothing disappears from your view unless you ask for it.
+- The threshold is **yours**. Set it to 1 to fold on a single agreement; raise it if you would
+  rather see everything until a claim is well established.
+- A group shows **one entry** with a `+N duplicates` badge, and its score is the **combined**
+  support of the whole group — because that support belongs to the idea, not to whichever
+  wording happened to be listed.
+- Reports form chains. If A is agreed similar to B, and B to C, then all three fold into one
+  entry; showing A and C separately would still split the same idea.
+- The entry shown is the one **reporters judged better written**, falling back to the most
+  supported. The person who noticed the duplication read both closely, so their judgement of
+  the wording is the best signal available.
+
+### Do not split your own vote
+
+If you agree that two proposals say the same thing, but support one and oppose the other, you
+are dividing an idea against itself. The platform points this out:
+
+> You agree these two say the same thing, but you voted **1** on this one and **−1** on the
+> other. That splits the support for a single idea across two entries. Consider voting the same
+> on both.
+
+It is advice, not a rule — you are never prevented from voting as you see fit.
+
+---
+
+## 9. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -326,6 +380,9 @@ say in what gets read.
 | My proposal was rejected as too long. | It is more than one sentence, so it is more than one proposal. Split it. |
 | I added a source and it did not appear as new. | Someone had already cited it in this topic, so yours was linked to the existing entry — its rating stays in one place. |
 | Why two sets of vote buttons on a source? | Accuracy and relevance are judged separately; a source can be strong on one and weak on the other. |
+| A proposal I saw yesterday is gone. | You have folding turned on and someone reported it as a duplicate. Turn folding off, or raise the threshold, to see it again. |
+| Why does one entry show a bigger score than its own votes? | It stands for a group of duplicates, so it shows their combined support. |
+| Can I merge two proposals myself? | No. You report that they are duplicates; others decide whether they agree, and each reader chooses the threshold at which that folds them. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
 
 ---
@@ -337,7 +394,6 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| Marking two proposals as similar, and filtering duplicates by a threshold you choose | 6 |
 | Grouping proposals into alternative solutions | 7 |
 | Scoring a group against the requirements with your own weightings | 8 |
 | Searching comments with AND/OR queries | 9 |

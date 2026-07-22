@@ -42,6 +42,9 @@ public sealed class Comment
     public static Comment OnProposal(Guid proposalId, Guid authorId, string body, DateTime createdAtUtc) =>
         new(authorId, body, createdAtUtc) { ProposalId = proposalId };
 
+    public static Comment OnSimilarity(Guid similarityId, Guid authorId, string body, DateTime createdAtUtc) =>
+        new(authorId, body, createdAtUtc) { SimilarityId = similarityId };
+
     public Guid Id { get; private set; }
 
     public Guid AuthorId { get; private set; }
@@ -68,6 +71,8 @@ public sealed class Comment
     public Guid? TopicId { get; private set; }
 
     public Guid? ProposalId { get; private set; }
+
+    public Guid? SimilarityId { get; private set; }
 
     public void Edit(string body, DateTime atUtc)
     {

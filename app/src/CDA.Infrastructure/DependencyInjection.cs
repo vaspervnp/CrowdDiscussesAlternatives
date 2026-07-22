@@ -5,6 +5,7 @@ using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.References;
+using CDA.Infrastructure.Similarity;
 using CDA.Infrastructure.Topics;
 using CDA.Infrastructure.Voting;
 using Microsoft.AspNetCore.Identity;
@@ -66,6 +67,8 @@ public static class DependencyInjection
         services.AddScoped<ProposalVotingService>();
         services.AddScoped<ReferenceService>();
         services.AddScoped<ReferenceVotingService>();
+        services.AddScoped<SimilarityService>();
+        services.AddScoped<SimilarityVotingService>();
 
         return services;
     }

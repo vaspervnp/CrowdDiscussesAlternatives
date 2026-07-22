@@ -393,8 +393,21 @@ Decisions taken during the work:
 
 **A canonicalisation flaw the tests exposed.** Scheme detection tested for `://`, so `javascript:alert(1)` became `https://javascript:alert(1)` and was refused for being unparseable rather than for having a forbidden scheme — the right outcome by accident, with a message that hid what was actually submitted. Now a scheme is detected properly, with `example.com:8443/x` still recognised as a host and port rather than a scheme.
 
-### Phase 6 — Similarity *(≈1 week)*
-Similarity reports (normalized pairs), voting, justification comments, the connected-components filter with a user-adjustable threshold, and the "vote the same on similar proposals" prompt. **Exit:** a user can collapse duplicate proposals at a threshold of their choosing.
+### Phase 6 — Similarity ✅ *done 2026-07-22*
+Duplicate reports on canonically ordered pairs, voting on them, and a reader-controlled fold that collapses connected groups into one entry each.
+
+**Exit criteria met**, verified in a browser: a duplicate reported with a justification, agreed by two people, and folded away at the reader's threshold — the surviving entry carrying a `+1 duplicate` badge and the group's combined support. 223 tests pass.
+
+Decisions taken during the work:
+- **Folding is off by default and the threshold belongs to the reader.** The source documents are explicit that the platform reports similarity rather than deciding it; nothing disappears from someone's view unless they asked for it.
+- **Reports are a graph, not a list of pairs.** A~B and B~C means one idea in three wordings, so connected components are collapsed together — leaving A and C listed separately would still split the support the fold exists to reunite. Implemented as union-find in `SimilarityGraph`, a pure function with its own unit tests.
+- **The representative is the wording reporters judged best**, then the best supported, then by id. The final tie-break is not cosmetic: without it the entry standing for a group could change between requests and the list would appear to shuffle itself.
+- **A folded group reports its combined score.** Support split across duplicates belongs to the idea, not to whichever wording happened to be listed — showing only the representative's own score would understate it by exactly what the duplication cost. Suppressed when the topic withholds tallies, so the fold cannot leak what the setting hides.
+- **Pairs are canonically ordered**, in the domain and again as a database check constraint. "A is like B" and "B is like A" are one claim; two rows would split the votes that decide whether it takes effect.
+- **The fold is applied before paging, not after.** Excluding rows from a page already fetched would give short pages and a cursor that skips entries.
+- **The vote-splitting warning is advice, not enforcement.** Agreeing two proposals are identical while voting differently on them is exactly the split the mechanism exists to prevent, so the page says so — but nobody is stopped from voting as they see fit.
+
+Deferred: the collapse recomputes per request. It is bounded by the number of active reports in one topic and is a single indexed query, but caching per (topic, threshold) is the obvious optimisation if a topic ever grows large enough to feel it.
 
 ### Phase 7 — Groups / alternative solutions *(≈1.5 weeks)*
 Group creation from selected proposals, description, group voting and comments, group detail showing member proposals *and* their comments, default ordering by top-3 reference reputation then user sort, `ImprovesGroupId` marking. **Exit:** the central "assemble a solution" feature works.

@@ -42,6 +42,28 @@
     </ul>
 </div>
 
+@* Folding duplicates is the reader's choice, at the reader's threshold. The platform records
+   what people report; it never decides that two proposals are the same. *@
+<form method="get" class="row g-2 align-items-center mb-3 col-lg-9">
+    <input type="hidden" name="sort" value="@Model.Sort" />
+    <input type="hidden" name="author" value="@Model.AuthorFilter" />
+    <div class="col-auto form-check">
+        <input class="form-check-input" type="checkbox" name="collapse" value="true"
+               id="collapse" checked="@Model.Collapse" onchange="this.form.submit()" />
+        <label class="form-check-label" for="collapse">Fold duplicates together</label>
+    </div>
+    <div class="col-auto">
+        <label class="form-label mb-0 small text-muted" for="threshold">when agreed by at least</label>
+    </div>
+    <div class="col-auto">
+        <input type="number" name="threshold" id="threshold" class="form-control form-control-sm"
+               style="width: 5rem" min="0" value="@Model.Threshold" />
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-sm btn-outline-secondary">Apply</button>
+    </div>
+</form>
+
 @if (Model.AuthorFilter is not null)
 {
     <p>
@@ -72,12 +94,26 @@
                         <span class="badge bg-warning text-dark"
                               title="Still open for improvement, so it cannot be voted on yet.">editable</span>
                     }
+                    @if (proposal.CollapsedDuplicates > 0)
+                    {
+                        <span class="badge bg-info text-dark"
+                              title="Folded together with proposals the crowd reported as duplicates.">
+                            +@proposal.CollapsedDuplicates duplicate@(proposal.CollapsedDuplicates == 1 ? "" : "s")
+                        </span>
+                    }
                 </small>
             </div>
             <div class="text-end text-nowrap">
                 @if (!proposal.IsLocked)
                 {
                     <small class="text-muted">voting not open</small>
+                }
+                else if (proposal.GroupScoreSum is { } groupScore)
+                {
+                    @* Support that was split across duplicates belongs to the idea, not to
+                       whichever wording happened to be listed. *@
+                    <span class="h5">@(groupScore > 0 ? "+" : "")@groupScore</span><br />
+                    <small class="text-muted">combined across duplicates</small>
                 }
                 else if (proposal.ScoreSum is { } score)
                 {

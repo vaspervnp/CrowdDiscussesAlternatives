@@ -147,9 +147,10 @@ def reset_database():
                           ssl={"ssl_mode": "REQUIRED"}, database=DB_NAME, connect_timeout=15)
     cur = con.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
-    for t in ("Comments", "Requirements", "Votes", "TopicMembers", "Topics", "UserProfiles",
-              "AspNetUserClaims", "AspNetUserLogins", "AspNetUserRoles", "AspNetUserTokens",
-              "AspNetUsers"):
+    for t in ("Comments", "Requirements", "Votes", "SimilarityReports", "ProposalReferences",
+              "References", "TopicUserReputations", "Proposals", "TopicMembers", "Topics",
+              "UserProfiles", "AspNetUserClaims", "AspNetUserLogins", "AspNetUserRoles",
+              "AspNetUserTokens", "AspNetUsers"):
         cur.execute(f"TRUNCATE TABLE `{t}`")
     cur.execute("SET FOREIGN_KEY_CHECKS = 1")
     con.commit()
@@ -271,10 +272,40 @@ def main():
         page.goto(f"{BASE}{instrumental}")
         shot(page, "proposal-references")
 
-        print("capturing the proposal pool")
+        print("reporting a duplicate and agreeing with it")
         sign_in(page, "chair@example.com")
+        add_proposal(page, songs, "Start the record with the first single we released")
+        duplicate = proposal_urls(page, songs)[0]
+        lock_proposal(page, duplicate)
+
+        # Report it as saying the same thing as the earlier opening-track proposal, and judge
+        # the earlier wording the better of the two.
+        page.goto(f"{BASE}{duplicate}")
+        page.fill("input[name=otherProposalId]", opening.rsplit("/", 1)[-1])
+        page.fill("input[name=justification]", "Both say the album should open with the first single.")
+        page.click("form[action$='/similar'] button")
+        page.wait_for_load_state("networkidle")
+
+        page.click("form[action*='/similar/'] button[value='1']")
+        page.wait_for_load_state("networkidle")
+
+        sign_in(page, "editor@example.com")
+        page.goto(f"{BASE}{duplicate}")
+        page.click("form[action*='/similar/'] button[value='1']")
+        page.wait_for_load_state("networkidle")
+
+        print("capturing a proposal reported as a duplicate")
+        sign_in(page, "chair@example.com")
+        page.goto(f"{BASE}{duplicate}")
+        shot(page, "proposal-similar")
+
+        print("capturing the proposal pool")
         page.goto(f"{songs}/proposals")
         shot(page, "proposals-list")
+
+        print("capturing the pool with duplicates folded together")
+        page.goto(f"{songs}/proposals?collapse=true&threshold=1")
+        shot(page, "proposals-collapsed")
 
         print("capturing a proposal still open for improvement")
         page.goto(f"{BASE}{opening}")

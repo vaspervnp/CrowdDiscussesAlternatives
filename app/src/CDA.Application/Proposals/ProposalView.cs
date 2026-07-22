@@ -48,6 +48,28 @@ public sealed record ProposalView
 
     public required bool CanComment { get; init; }
 
+    /// <summary>
+    /// How many other proposals this one stands for, when duplicates are folded together.
+    /// </summary>
+    /// <remarks>
+    /// Zero when it stands only for itself. Greater than zero means the reader's similarity
+    /// threshold has folded a group of duplicates into this entry.
+    /// </remarks>
+    public int CollapsedDuplicates { get; init; }
+
+    /// <summary>
+    /// The combined score of a folded group.
+    /// </summary>
+    /// <remarks>
+    /// Support that was split across duplicates belongs to the idea, not to whichever wording
+    /// happened to be listed — showing only the representative's own score would understate it
+    /// by exactly the amount the duplication cost.
+    /// </remarks>
+    public int? GroupScoreSum { get; init; }
+
+    public ProposalView WithCollapse(int duplicates, int? groupScore) =>
+        this with { CollapsedDuplicates = duplicates, GroupScoreSum = groupScore };
+
     public static ProposalView Project(
         Proposal proposal,
         string authorDisplayName,

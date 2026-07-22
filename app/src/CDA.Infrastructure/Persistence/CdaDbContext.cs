@@ -1,6 +1,7 @@
 using CDA.Domain.Discussion;
 using CDA.Domain.Proposals;
 using CDA.Domain.References;
+using CDA.Domain.Similarity;
 using CDA.Domain.Topics;
 using CDA.Domain.Users;
 using CDA.Domain.Voting;
@@ -35,6 +36,8 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     public DbSet<ProposalReference> ProposalReferences => Set<ProposalReference>();
 
     public DbSet<TopicUserReputation> TopicUserReputations => Set<TopicUserReputation>();
+
+    public DbSet<SimilarityReport> SimilarityReports => Set<SimilarityReport>();
 
     public DbSet<Vote> Votes => Set<Vote>();
 

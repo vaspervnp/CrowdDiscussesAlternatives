@@ -106,6 +106,91 @@
         </div>
     </div>
 
+    @* --- Duplicates: reported by people, never decided by the platform --- *@
+    <h2 class="h5">Similar proposals</h2>
+
+    @if (Model.Similarities.Count == 0)
+    {
+        <p class="text-muted fst-italic">Nobody has reported this as a duplicate of anything.</p>
+    }
+
+    @foreach (var similar in Model.Similarities)
+    {
+        <div class="border rounded p-3 mb-2">
+            <div>
+                <a asp-action="Details" asp-route-topicId="@Model.Topic.Id" asp-route-id="@similar.OtherProposalId">
+                    @similar.OtherProposalText
+                </a>
+                @if (similar.IsActive)
+                {
+                    <span class="badge bg-info text-dark" title="Enough agreement to fold at this topic's default threshold.">active</span>
+                }
+                <div class="small text-muted">
+                    reported by
+                    <a asp-controller="Profile" asp-action="Details" asp-route-id="@similar.ReportedByUserId"
+                       class="text-muted">@similar.ReportedByDisplayName</a>
+                    &middot; @(similar.ScoreSum > 0 ? "+" : "")@similar.ScoreSum from
+                    @similar.VoteCount vote@(similar.VoteCount == 1 ? "" : "s")
+                    @if (similar.BetterWrittenProposalId == Model.Proposal.Id)
+                    {
+                        <span>&middot; judged the better written of the two</span>
+                    }
+                </div>
+                @if (similar.Justification is not null)
+                {
+                    <p class="small mb-0 mt-1" style="white-space: pre-wrap">@similar.Justification</p>
+                }
+            </div>
+
+            @if (Model.CanCite)
+            {
+                <div class="mt-2">
+                    <span class="small me-2">Are these the same?</span>
+                    <form method="post" asp-action="VoteOnSimilarity" asp-route-topicId="@Model.Topic.Id"
+                          asp-route-id="@Model.Proposal.Id" asp-route-similarityId="@similar.Id" class="d-inline">
+                        <button name="value" value="1" class="btn btn-sm @(similar.MyVote == 1 ? "btn-success" : "btn-outline-success")">Yes</button>
+                        <button name="value" value="0" class="btn btn-sm @(similar.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">Unsure</button>
+                        <button name="value" value="-1" class="btn btn-sm @(similar.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">No</button>
+                    </form>
+                </div>
+
+                @* The split this whole mechanism exists to prevent: agreeing two proposals say
+                   the same thing while backing them differently divides their support. *@
+                @if (similar.MyVote == 1 && similar.MyVoteOnThis is { } here
+                     && similar.MyVoteOnOther is { } there && here != there)
+                {
+                    <div class="alert alert-warning mt-2 mb-0 small">
+                        You agree these two say the same thing, but you voted
+                        <strong>@here</strong> on this one and <strong>@there</strong> on the other.
+                        That splits the support for a single idea across two entries. Consider
+                        voting the same on both.
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    @if (Model.CanCite)
+    {
+        <form method="post" asp-action="ReportSimilar" asp-route-topicId="@Model.Topic.Id"
+              asp-route-id="@Model.Proposal.Id" class="border-top pt-3 mb-4">
+            <label class="form-label mb-0">Report a duplicate</label>
+            <div class="form-text mb-2">
+                Paste the id of the other proposal from its address bar. Nothing is merged — you
+                are recording a claim that others can agree or disagree with.
+            </div>
+            <input name="otherProposalId" class="form-control mb-2" required
+                   placeholder="Other proposal id" />
+            <input name="justification" class="form-control mb-2" maxlength="1000"
+                   placeholder="Why do you think they say the same thing? (optional)" />
+            <select name="betterWrittenProposalId" class="form-select mb-2">
+                <option value="">No preference on wording</option>
+                <option value="@Model.Proposal.Id">This one is better written</option>
+            </select>
+            <button class="btn btn-outline-primary btn-sm">Report as similar</button>
+        </form>
+    }
+
     @* --- Sources: what this proposal is argued from --- *@
     <h2 class="h5">Sources</h2>
     <p class="text-muted">

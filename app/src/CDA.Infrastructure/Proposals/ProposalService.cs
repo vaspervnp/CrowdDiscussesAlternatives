@@ -2,6 +2,7 @@ using CDA.Application.Abstractions;
 using CDA.Application.Proposals;
 using CDA.Application.Topics;
 using CDA.Domain.Proposals;
+using CDA.Domain.Similarity;
 using CDA.Domain.Topics;
 using CDA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -230,6 +231,7 @@ public sealed class ProposalService(CdaDbContext database, IClock clock)
         ProposalSort sort = ProposalSort.Score,
         Guid? authorId = null,
         string? cursor = null,
+        int? similarityThreshold = null,
         CancellationToken cancellationToken = default)
     {
         var query = database.Proposals.AsNoTracking().Where(p => p.TopicId == topicId);
@@ -237,6 +239,16 @@ public sealed class ProposalService(CdaDbContext database, IClock clock)
         if (authorId is { } author)
         {
             query = query.Where(p => p.AuthorId == author);
+        }
+
+        // Duplicates are folded before paging, not after: excluding rows from a page that has
+        // already been fetched would give short pages and a cursor that skips entries.
+        var collapsed = await CollapseAsync(topicId, similarityThreshold, cancellationToken);
+
+        if (collapsed.Hidden.Count > 0)
+        {
+            var hidden = collapsed.Hidden.ToList();
+            query = query.Where(p => !hidden.Contains(p.Id));
         }
 
         query = sort switch
@@ -268,19 +280,104 @@ public sealed class ProposalService(CdaDbContext database, IClock clock)
 
         var now = clock.UtcNow;
 
+        var groupScores = collapsed.Hidden.Count > 0
+            ? await GroupScoresAsync(collapsed, page.Select(r => r.Proposal.Id), cancellationToken)
+            : [];
+
         var items = page
-            .Select(row => ProposalView.Project(
-                row.Proposal,
-                row.DisplayName,
-                topic,
-                viewer,
-                now,
-                myVotes.TryGetValue(row.Proposal.Id, out var vote) ? vote : null))
+            .Select(row =>
+            {
+                var view = ProposalView.Project(
+                    row.Proposal,
+                    row.DisplayName,
+                    topic,
+                    viewer,
+                    now,
+                    myVotes.TryGetValue(row.Proposal.Id, out var vote) ? vote : null);
+
+                if (!collapsed.Members.TryGetValue(row.Proposal.Id, out var members) || members.Count <= 1)
+                {
+                    return view;
+                }
+
+                return view.WithCollapse(
+                    members.Count - 1,
+                    // Only where the tallies are visible at all; hiding them and then publishing
+                    // a group total would defeat the topic's own setting.
+                    view.ScoreSum is null ? null : groupScores.GetValueOrDefault(row.Proposal.Id));
+            })
             .ToList();
 
         var next = hasMore && page.Count > 0 ? EncodeCursor(sort, page[^1].Proposal) : null;
 
         return new ProposalPage(items, next);
+    }
+
+    /// <summary>
+    /// Works out which proposals are folded away at the reader's chosen threshold.
+    /// </summary>
+    /// <remarks>
+    /// A null threshold means no folding at all — the reader sees every proposal, duplicates
+    /// included. That is the default, because the platform reports similarity rather than
+    /// deciding it: nothing disappears from someone's view unless they asked for it to.
+    /// </remarks>
+    private async Task<CollapsedProposals> CollapseAsync(
+        Guid topicId,
+        int? threshold,
+        CancellationToken cancellationToken)
+    {
+        if (threshold is not { } minimumVotes)
+        {
+            return CollapsedProposals.None;
+        }
+
+        var edges = await database.SimilarityReports
+            .AsNoTracking()
+            .Where(r => r.TopicId == topicId && r.ScoreSum >= minimumVotes)
+            .Select(r => new { r.ProposalAId, r.ProposalBId, r.BetterWrittenProposalId })
+            .ToListAsync(cancellationToken);
+
+        if (edges.Count == 0)
+        {
+            return CollapsedProposals.None;
+        }
+
+        var involved = edges.SelectMany(e => new[] { e.ProposalAId, e.ProposalBId }).Distinct().ToList();
+
+        var scores = await database.Proposals
+            .AsNoTracking()
+            .Where(p => involved.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.ScoreSum, cancellationToken);
+
+        return SimilarityGraph.Collapse(
+            edges.Select(e => new SimilarityEdge(e.ProposalAId, e.ProposalBId, e.BetterWrittenProposalId)),
+            scores);
+    }
+
+    private async Task<Dictionary<Guid, int>> GroupScoresAsync(
+        CollapsedProposals collapsed,
+        IEnumerable<Guid> representatives,
+        CancellationToken cancellationToken)
+    {
+        var wanted = representatives
+            .Where(id => collapsed.Members.ContainsKey(id))
+            .ToList();
+
+        if (wanted.Count == 0)
+        {
+            return [];
+        }
+
+        var memberIds = wanted.SelectMany(id => collapsed.Members[id]).Distinct().ToList();
+
+        var scores = await database.Proposals
+            .AsNoTracking()
+            .Where(p => memberIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.ScoreSum, cancellationToken);
+
+        return wanted.ToDictionary(
+            id => id,
+            id => collapsed.Members[id].Sum(member => scores.GetValueOrDefault(member)));
     }
 
     private static IQueryable<Proposal> ApplyScore(IQueryable<Proposal> query, string? cursor)
