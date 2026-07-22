@@ -1,6 +1,7 @@
 # Crowd Discusses Alternatives — Development Plan
 
 > Derived from: `CDA core concepts.docx`, `CDA features.docx`, `Technical Documentation.docx`, `cda-menu - v7.doc`.
+> For what the platform does *today*, from a participant's point of view, see [manual.md](manual.md) — kept current as each phase lands.
 > Status: initial plan. The `app/` folder is currently empty — this is a greenfield implementation.
 
 ---
@@ -295,7 +296,7 @@ MVC routes mirror the interface tree from `cda-menu - v7.doc`:
 
 ## 7. Delivery phases
 
-Each phase ends with: migrations applied, API + MVC screens working, integration tests green.
+Each phase ends with: migrations applied, API + MVC screens working, integration tests green, and **[manual.md](manual.md) updated** — including regenerated screenshots where the interface changed.
 
 ### Phase 0 — Foundation ✅ *done 2026-07-22*
 Solution scaffold (4 source projects + 2 test projects), `.gitignore` and user-secrets wiring, `CdaDbContext` with the model-wide collation override, an empty `InitialBaseline` migration applied to the live database, a `/health` endpoint reporting database connectivity, `ProblemDetails` for API failures with the MVC error view for pages, Serilog, OpenAPI, and a CI workflow.

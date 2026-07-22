@@ -8,8 +8,10 @@ a solution here is **assembled from many sentence-sized proposals** drawn from a
 Different groupings of those proposals become competing alternative solutions, which can then
 be discussed, evaluated against agreed requirements, and ranked.
 
-See [Documentation/devplan.md](Documentation/devplan.md) for the data model, the design
-decisions and the delivery plan.
+- [Documentation/manual.md](Documentation/manual.md) — how to use the platform, with
+  screenshots, and an honest list of what is not built yet.
+- [Documentation/devplan.md](Documentation/devplan.md) — the data model, the design decisions
+  and the delivery plan.
 
 ## Getting started
 
