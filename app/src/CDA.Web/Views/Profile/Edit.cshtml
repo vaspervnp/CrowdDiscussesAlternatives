@@ -1,27 +1,25 @@
 @model CDA.Web.Models.EditProfileViewModel
 @using CDA.Domain.Users
 @{
-    ViewData["Title"] = "My profile";
+    ViewData["Title"] = L["My profile"];
 
     var visibilityOptions = new List<SelectListItem>
     {
-        new() { Value = nameof(ProfileVisibility.Private), Text = "Only me" },
-        new() { Value = nameof(ProfileVisibility.Members), Text = "Signed-in members" },
-        new() { Value = nameof(ProfileVisibility.Public), Text = "Anyone" },
+        new() { Value = nameof(ProfileVisibility.Private), Text = L["Only me"] },
+        new() { Value = nameof(ProfileVisibility.Members), Text = L["Signed-in members"] },
+        new() { Value = nameof(ProfileVisibility.Public), Text = L["Anyone"] },
     };
 }
 
-<h1>My profile</h1>
+<h1>@L["My profile"]</h1>
 
 @if (TempData["Saved"] is true)
 {
-    <div class="alert alert-success">Profile saved.</div>
+    <div class="alert alert-success">@L["Profile saved."]</div>
 }
 
 <p class="text-muted col-md-8">
-    Each field has its own audience. New accounts start with everything set to
-    <em>only me</em> — nothing here is shared until you choose to share it. Your display
-    name is always visible, because it appears on everything you post.
+    @L["Each field has its own audience. New accounts start with everything set to only me — nothing here is shared until you choose to share it. Your display name is always visible, because it appears on everything you post."]
 </p>
 
 <form method="post" class="col-md-8">
@@ -29,77 +27,77 @@
 
     <div class="row mb-3">
         <div class="col-sm-8">
-            <label asp-for="RealName" class="form-label"></label>
+            <label asp-for="RealName" class="form-label">@L["Real name"]</label>
             <input asp-for="RealName" class="form-control" />
             <span asp-validation-for="RealName" class="text-danger"></span>
         </div>
         <div class="col-sm-4">
-            <label asp-for="RealNameVisibility" class="form-label">Visible to</label>
+            <label asp-for="RealNameVisibility" class="form-label">@L["Visible to"]</label>
             <select asp-for="RealNameVisibility" asp-items="visibilityOptions" class="form-select"></select>
         </div>
     </div>
 
     <div class="row mb-3">
         <div class="col-sm-8">
-            <label asp-for="Email" class="form-label"></label>
+            <label asp-for="Email" class="form-label">@L["Contact email"]</label>
             <input asp-for="Email" class="form-control" />
             <span asp-validation-for="Email" class="text-danger"></span>
         </div>
         <div class="col-sm-4">
-            <label asp-for="EmailVisibility" class="form-label">Visible to</label>
+            <label asp-for="EmailVisibility" class="form-label">@L["Visible to"]</label>
             <select asp-for="EmailVisibility" asp-items="visibilityOptions" class="form-select"></select>
         </div>
     </div>
 
     <div class="row mb-3">
         <div class="col-sm-8">
-            <label asp-for="Location" class="form-label"></label>
+            <label asp-for="Location" class="form-label">@L["Location"]</label>
             <input asp-for="Location" class="form-control" />
             <span asp-validation-for="Location" class="text-danger"></span>
         </div>
         <div class="col-sm-4">
-            <label asp-for="LocationVisibility" class="form-label">Visible to</label>
+            <label asp-for="LocationVisibility" class="form-label">@L["Visible to"]</label>
             <select asp-for="LocationVisibility" asp-items="visibilityOptions" class="form-select"></select>
         </div>
     </div>
 
     <div class="row mb-3">
         <div class="col-sm-8">
-            <label asp-for="Website" class="form-label"></label>
+            <label asp-for="Website" class="form-label">@L["Website"]</label>
             <input asp-for="Website" class="form-control" placeholder="https://" />
             <span asp-validation-for="Website" class="text-danger"></span>
         </div>
         <div class="col-sm-4">
-            <label asp-for="WebsiteVisibility" class="form-label">Visible to</label>
+            <label asp-for="WebsiteVisibility" class="form-label">@L["Visible to"]</label>
             <select asp-for="WebsiteVisibility" asp-items="visibilityOptions" class="form-select"></select>
         </div>
     </div>
 
     <div class="row mb-3">
         <div class="col-sm-8">
-            <label asp-for="Biography" class="form-label"></label>
+            <label asp-for="Biography" class="form-label">@L["About"]</label>
             <textarea asp-for="Biography" class="form-control" rows="5"></textarea>
             <span asp-validation-for="Biography" class="text-danger"></span>
         </div>
         <div class="col-sm-4">
-            <label asp-for="BiographyVisibility" class="form-label">Visible to</label>
+            <label asp-for="BiographyVisibility" class="form-label">@L["Visible to"]</label>
             <select asp-for="BiographyVisibility" asp-items="visibilityOptions" class="form-select"></select>
         </div>
     </div>
 
     <div class="row mb-3">
         <div class="col-sm-8">
-            <label asp-for="OnlineStatusVisibility" class="form-label"></label>
-            <div class="form-text">Whether others can see that you are currently active.</div>
+            <label asp-for="OnlineStatusVisibility" class="form-label">@L["Online status"]</label>
+            <div class="form-text">@L["Whether others can see that you are currently active."]</div>
         </div>
         <div class="col-sm-4">
             <select asp-for="OnlineStatusVisibility" asp-items="visibilityOptions" class="form-select"></select>
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="submit" class="btn btn-primary">@L["Save"]</button>
     <a asp-action="Details" asp-route-id="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value"
-       class="btn btn-link">View as others see it</a>
+       class="btn btn-link">@L["View as others see it"]</a>
 </form>
 
 @section Scripts {

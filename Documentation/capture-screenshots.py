@@ -546,6 +546,21 @@ def main():
         page.goto(f"{BASE}/Account/Register")
         shot(page, "register")
 
+        print("capturing the interface in Greek")
+        # The framework culture cookie the language switcher writes; setting it directly is the
+        # same effect as clicking Ελληνικά, and it persists across the pages below. Only the
+        # interface is translated — the topics and proposals are the content people typed, which
+        # stays in whatever language they wrote it in.
+        context.add_cookies([{
+            "name": ".AspNetCore.Culture",
+            "value": "c=el-GR|uic=el-GR",
+            "url": BASE,
+        }])
+        page.goto(f"{BASE}/topics")
+        shot(page, "topics-list-el")
+        page.goto(songs)
+        shot(page, "topic-el")
+
         browser.close()
         print("done")
 

@@ -1,6 +1,6 @@
 @model CDA.Web.Models.ParameterListViewModel
 @{
-    ViewData["Title"] = $"Factor tables — {Model.TopicSubject}";
+    ViewData["Title"] = L.Format("Factor tables — %topic%", ("topic", Model.TopicSubject));
 }
 
 @if (TempData["Error"] is string error)
@@ -14,28 +14,24 @@
 </p>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Factor tables</h1>
+    <h1 class="mb-0">@L["Factor tables"]</h1>
     @if (Model.CanCreate)
     {
-        <a asp-action="Create" asp-route-topicId="@Model.TopicId" class="btn btn-primary">Make a table</a>
+        <a asp-action="Create" asp-route-topicId="@Model.TopicId" class="btn btn-primary">@L["Make a table"]</a>
     }
 </div>
 
 <p class="text-muted col-lg-9">
-    A grid of how the key factors in this problem push on each other. Solutions usually fail not
-    because a measure does not work, but because it works while damaging something else that
-    mattered — this is a place to write that down and see it.
+    @L["A grid of how the key factors in this problem push on each other. Solutions usually fail not because a measure does not work, but because it works while damaging something else that mattered — this is a place to write that down and see it."]
 </p>
 
 <p class="text-muted col-lg-9">
-    Each person builds their own. A shared table is one participant's reading of the problem,
-    offered to the topic, not an agreed fact — so tables are never merged and always carry their
-    author's name.
+    @L["Each person builds their own. A shared table is one participant's reading of the problem, offered to the topic, not an agreed fact — so tables are never merged and always carry their author's name."]
 </p>
 
 @if (Model.Tables.Count == 0)
 {
-    <p class="text-muted fst-italic">Nothing here yet.</p>
+    <p class="text-muted fst-italic">@L["Nothing here yet."]</p>
 }
 
 <div class="list-group col-lg-9">
@@ -45,14 +41,14 @@
        class="list-group-item list-group-item-action">
         @table.Name
         <small class="d-block text-muted">
-            @table.OwnerDisplayName &middot; @table.ParameterCount factors
+            @table.OwnerDisplayName &middot; @L.Format(table.ParameterCount == 1 ? "%count% factor" : "%count% factors", ("count", table.ParameterCount))
             @if (table.IsMine && !table.IsShared)
             {
-                <span class="badge bg-secondary">private to you</span>
+                <span class="badge bg-secondary">@L["private to you"]</span>
             }
             else if (table.IsShared)
             {
-                <span class="badge bg-info text-dark">shared</span>
+                <span class="badge bg-info text-dark">@L["shared"]</span>
             }
         </small>
     </a>

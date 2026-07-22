@@ -31,6 +31,8 @@
     <!-- 4.8.0 carries advisories in both MailKit (GHSA-9j88-vvj5-vhgr) and its MimeKit
          dependency (GHSA-g7hc-96xr-gvvx); restore fails the build on them by design. -->
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
+    <!-- IStringLocalizer / IStringLocalizerFactory for the custom DB-backed localizer. -->
+    <PackageVersion Include="Microsoft.Extensions.Localization.Abstractions" Version="10.0.10" />
     <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="MimeKit" Version="4.17.0" />
     <!--

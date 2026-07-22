@@ -1,0 +1,69 @@
+@model CDA.Web.Models.TranslationsViewModel
+@{
+    ViewData["Title"] = L["Translations"];
+    var done = Model.TotalCount - Model.MissingCount;
+}
+
+<h1>@L["Translations"]</h1>
+
+<p class="text-muted col-lg-9">
+    @L.Format("Every phrase in the interface, with its %language% translation. English is the source, so it is not edited here — change a translation and it takes effect at once.", ("language", L["Greek"]))
+</p>
+
+<p>
+    <span class="badge bg-success">@L.Format("%done% of %total% translated", ("done", done), ("total", Model.TotalCount))</span>
+    @if (Model.MissingCount > 0)
+    {
+        <span class="badge bg-warning text-dark">@L.Format("%count% still missing", ("count", Model.MissingCount))</span>
+    }
+</p>
+
+<div class="mb-3">
+    @if (Model.MissingOnly)
+    {
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">@L["Show all"]</a>
+    }
+    else
+    {
+        <a asp-action="Index" asp-route-missingOnly="true" class="btn btn-sm btn-outline-secondary">@L["Show only what is missing"]</a>
+    }
+</div>
+
+@if (TempData["Saved"] is string saved)
+{
+    <div class="alert alert-success">@L.Format("Saved “%key%”.", ("key", saved))</div>
+}
+
+@if (Model.Rows.Count == 0)
+{
+    <p class="text-muted fst-italic">@L["Nothing to show."]</p>
+}
+else
+{
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th style="width: 45%">@L["English"]</th>
+                <th style="width: 55%">@L["Greek"]</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var row in Model.Rows)
+        {
+            <tr>
+                <td><code class="text-body">@row.Key</code></td>
+                <td>
+                    <form method="post" asp-action="Set" class="d-flex gap-2">
+                        <input type="hidden" name="key" value="@row.Key" />
+                        <input type="hidden" name="missingOnly" value="@Model.MissingOnly.ToString()" />
+                        <input type="text" name="value" value="@row.Translation"
+                               class="form-control form-control-sm @(row.IsTranslated ? "" : "border-warning")"
+                               placeholder="@L["(untranslated — shows English)"]" />
+                        <button type="submit" class="btn btn-sm btn-outline-primary">@L["Save"]</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

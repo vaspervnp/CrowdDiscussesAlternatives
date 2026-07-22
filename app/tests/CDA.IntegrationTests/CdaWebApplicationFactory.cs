@@ -34,6 +34,11 @@ public sealed class CdaWebApplicationFactory(DatabaseFixture database)
 
             services.AddDbContext<CdaDbContext>(options =>
                 options.UseMySql(database.ConnectionString, DependencyInjection.ServerVersion));
+
+            // The translation seeder runs on host start; tests seed explicitly and reset between
+            // cases, so leaving it in would only race those and add a full re-seed to every
+            // test's startup. Drop it — the localization test owns seeding.
+            services.RemoveAll<IHostedService>();
         });
     }
 

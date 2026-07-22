@@ -2,37 +2,35 @@
 @using CDA.Domain.Topics
 @using CDA.Infrastructure.Topics
 @{
-    ViewData["Title"] = "Topics";
+    ViewData["Title"] = L["Topics"];
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Topics</h1>
+    <h1 class="mb-0">@L["Topics"]</h1>
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <a asp-action="Create" class="btn btn-primary">Start a topic</a>
+        <a asp-action="Create" class="btn btn-primary">@L["Start a topic"]</a>
     }
 </div>
 
 <p class="text-muted col-lg-9">
-    Ranked by how important participants judge them. Ranking matters here: a forum with
-    hundreds of undifferentiated threads spreads a crowd too thin to reach a conclusion on
-    any of them.
+    @L["Ranked by how important participants judge them. Ranking matters here: a forum with hundreds of undifferentiated threads spreads a crowd too thin to reach a conclusion on any of them."]
 </p>
 
 <ul class="nav nav-pills mb-3">
     <li class="nav-item">
         <a class="nav-link @(Model.Sort == TopicSort.Importance ? "active" : "")"
-           asp-action="Index" asp-route-sort="@TopicSort.Importance">Most important</a>
+           asp-action="Index" asp-route-sort="@TopicSort.Importance">@L["Most important"]</a>
     </li>
     <li class="nav-item">
         <a class="nav-link @(Model.Sort == TopicSort.Newest ? "active" : "")"
-           asp-action="Index" asp-route-sort="@TopicSort.Newest">Newest</a>
+           asp-action="Index" asp-route-sort="@TopicSort.Newest">@L["Newest"]</a>
     </li>
 </ul>
 
 @if (Model.Topics.Count == 0)
 {
-    <p class="text-muted">No topics yet.</p>
+    <p class="text-muted">@L["No topics yet."]</p>
 }
 
 <div class="list-group">
@@ -45,18 +43,18 @@
                     @topic.Subject
                 </a>
                 <small class="text-muted">
-                    @topic.Phase
+                    @L[topic.Phase.ToString()]
                     @if (topic.Visibility == TopicVisibility.InviteOnly)
                     {
-                        <span class="badge bg-secondary">invite only</span>
+                        <span class="badge bg-secondary">@L["invite only"]</span>
                     }
                     @if (topic.IsClosed)
                     {
-                        <span class="badge bg-dark">closed</span>
+                        <span class="badge bg-dark">@L["closed"]</span>
                     }
                     @if (topic.IsMember)
                     {
-                        <span class="badge bg-info text-dark">member</span>
+                        <span class="badge bg-info text-dark">@L["member"]</span>
                     }
                 </small>
             </div>
@@ -66,12 +64,12 @@
                 {
                     <span class="h5">@(score > 0 ? "+" : "")@score</span>
                     <br />
-                    <small class="text-muted">@topic.VoteCount vote@(topic.VoteCount == 1 ? "" : "s")</small>
+                    <small class="text-muted">@L.Format(topic.VoteCount == 1 ? "%count% vote" : "%count% votes", ("count", topic.VoteCount))</small>
                 }
                 else
                 {
-                    <small class="text-muted" title="This topic hides its tallies until it closes.">
-                        ranked, counts hidden
+                    <small class="text-muted" title="@L["This topic hides its tallies until it closes."]">
+                        @L["ranked, counts hidden"]
                     </small>
                 }
             </div>
@@ -84,6 +82,6 @@
 {
     <a class="btn btn-outline-secondary mt-3"
        asp-action="Index" asp-route-sort="@Model.Sort" asp-route-cursor="@Model.NextCursor">
-        Show more
+        @L["Show more"]
     </a>
 }

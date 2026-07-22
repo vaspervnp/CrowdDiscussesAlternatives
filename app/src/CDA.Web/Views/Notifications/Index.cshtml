@@ -1,29 +1,29 @@
 @model CDA.Web.Models.NotificationsViewModel
 @using CDA.Domain.Notifications
 @{
-    ViewData["Title"] = "Notifications";
+    ViewData["Title"] = L["Notifications"];
 }
 
-<h1>Notifications</h1>
+<h1>@L["Notifications"]</h1>
 
 <div class="col-lg-9">
     <form method="post" asp-action="SetDelivery" class="row g-2 align-items-end mb-3">
         <div class="col-auto">
-            <label class="form-label mb-0" for="delivery">Email me</label>
+            <label class="form-label mb-0" for="delivery">@L["Email me"]</label>
             <select name="delivery" id="delivery" class="form-select">
                 <option value="@NotificationDelivery.Daily" selected="@(Model.Delivery == NotificationDelivery.Daily)">
-                    once a day, gathered together
+                    @L["once a day, gathered together"]
                 </option>
                 <option value="@NotificationDelivery.Immediate" selected="@(Model.Delivery == NotificationDelivery.Immediate)">
-                    as things happen
+                    @L["as things happen"]
                 </option>
                 <option value="@NotificationDelivery.None" selected="@(Model.Delivery == NotificationDelivery.None)">
-                    never — I will look here
+                    @L["never — I will look here"]
                 </option>
             </select>
         </div>
         <div class="col-auto">
-            <button class="btn btn-outline-secondary">Save</button>
+            <button class="btn btn-outline-secondary">@L["Save"]</button>
         </div>
     </form>
 
@@ -31,25 +31,23 @@
     {
         @* Said plainly rather than offering a setting that quietly does nothing. *@
         <div class="alert alert-info">
-            <strong>Email is not switched on for this installation.</strong>
-            Nothing is being sent, whatever you choose above — but everything is still listed
-            here, and your preference is remembered for when it is configured.
+            <strong>@L["Email is not switched on for this installation."]</strong>
+            @L["Nothing is being sent, whatever you choose above — but everything is still listed here, and your preference is remembered for when it is configured."]
         </div>
     }
 
     <p class="text-muted">
-        Everything that happens is recorded here whatever your email setting, so turning email
-        off costs you nothing.
+        @L["Everything that happens is recorded here whatever your email setting, so turning email off costs you nothing."]
     </p>
 
     @if (Model.Notifications.Count == 0)
     {
-        <p class="text-muted fst-italic">Nothing yet.</p>
+        <p class="text-muted fst-italic">@L["Nothing yet."]</p>
     }
     else
     {
         <form method="post" asp-action="MarkAllRead" class="mb-2">
-            <button class="btn btn-sm btn-outline-secondary">Mark everything as read</button>
+            <button class="btn btn-sm btn-outline-secondary">@L["Mark everything as read"]</button>
         </form>
 
         <div class="list-group">
@@ -59,7 +57,7 @@
                class="list-group-item list-group-item-action @(notification.IsRead ? "" : "list-group-item-light")">
                 @if (!notification.IsRead)
                 {
-                    <span class="badge bg-primary">new</span>
+                    <span class="badge bg-primary">@L["new"]</span>
                 }
                 @notification.Summary
                 <small class="d-block text-muted">

@@ -1,0 +1,27 @@
+@using System.Globalization
+@model string
+@{
+    // Each language a form of its own, so the switch is a POST (a link on another site cannot
+    // change someone's language) and the current page is preserved to return to.
+    var current = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var languages = new[] { ("en-GB", L["English"]), ("el-GR", L["Greek"]) };
+}
+<ul class="navbar-nav">
+    <li class="nav-item dropdown">
+        <a class="nav-link text-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">🌐 @L["Language"]</a>
+        <ul class="dropdown-menu dropdown-menu-end">
+            @foreach (var (culture, name) in languages)
+            {
+                var isCurrent = culture.StartsWith(current, StringComparison.OrdinalIgnoreCase);
+                <li>
+                    <form method="post" asp-controller="Culture" asp-action="Set">
+                        <input type="hidden" name="culture" value="@culture" />
+                        <input type="hidden" name="returnUrl" value="@Model" />
+                        <button type="submit" class="dropdown-item @(isCurrent ? "active" : "")">@name</button>
+                    </form>
+                </li>
+            }
+        </ul>
+    </li>
+</ul>

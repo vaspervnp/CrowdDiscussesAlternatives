@@ -2,7 +2,7 @@
 @using CDA.Domain.Proposals
 @using CDA.Infrastructure.Proposals
 @{
-    ViewData["Title"] = $"Proposals — {Model.Topic.Subject}";
+    ViewData["Title"] = L.Format("Proposals — %topic%", ("topic", Model.Topic.Subject));
 }
 
 @if (TempData["Error"] is string error)
@@ -14,17 +14,16 @@
     <a asp-controller="Topics" asp-action="Details" asp-route-id="@Model.Topic.Id"
        class="text-decoration-none">&larr; @Model.Topic.Subject</a>
 </p>
-<h1>Proposals</h1>
+<h1>@L["Proposals"]</h1>
 
 <p>
     <a asp-controller="Groups" asp-action="Index" asp-route-topicId="@Model.Topic.Id">
-        See the alternative solutions assembled from these &rarr;
+        @L["See the alternative solutions assembled from these →"]
     </a>
 </p>
 
 <p class="text-muted col-lg-9">
-    The pool of building blocks for this topic. Each one is roughly a sentence, so that the
-    parts people agree on can be reused in an alternative that fixes the parts they do not.
+    @L["The pool of building blocks for this topic. Each one is roughly a sentence, so that the parts people agree on can be reused in an alternative that fixes the parts they do not."]
 </p>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -32,18 +31,18 @@
         <li class="nav-item">
             <a class="nav-link @(Model.Sort == ProposalSort.Score ? "active" : "")"
                asp-action="Index" asp-route-topicId="@Model.Topic.Id"
-               asp-route-sort="@ProposalSort.Score" asp-route-author="@Model.AuthorFilter">Most supported</a>
+               asp-route-sort="@ProposalSort.Score" asp-route-author="@Model.AuthorFilter">@L["Most supported"]</a>
         </li>
         <li class="nav-item">
             <a class="nav-link @(Model.Sort == ProposalSort.Newest ? "active" : "")"
                asp-action="Index" asp-route-topicId="@Model.Topic.Id"
-               asp-route-sort="@ProposalSort.Newest" asp-route-author="@Model.AuthorFilter">Newest</a>
+               asp-route-sort="@ProposalSort.Newest" asp-route-author="@Model.AuthorFilter">@L["Newest"]</a>
         </li>
         <li class="nav-item">
             @* How someone who has been away catches up with an argument in progress. *@
             <a class="nav-link @(Model.Sort == ProposalSort.LastCommented ? "active" : "")"
                asp-action="Index" asp-route-topicId="@Model.Topic.Id"
-               asp-route-sort="@ProposalSort.LastCommented" asp-route-author="@Model.AuthorFilter">Recently discussed</a>
+               asp-route-sort="@ProposalSort.LastCommented" asp-route-author="@Model.AuthorFilter">@L["Recently discussed"]</a>
         </li>
     </ul>
 </div>
@@ -56,31 +55,31 @@
     <div class="col-auto form-check">
         <input class="form-check-input" type="checkbox" name="collapse" value="true"
                id="collapse" checked="@Model.Collapse" onchange="this.form.submit()" />
-        <label class="form-check-label" for="collapse">Fold duplicates together</label>
+        <label class="form-check-label" for="collapse">@L["Fold duplicates together"]</label>
     </div>
     <div class="col-auto">
-        <label class="form-label mb-0 small text-muted" for="threshold">when agreed by at least</label>
+        <label class="form-label mb-0 small text-muted" for="threshold">@L["when agreed by at least"]</label>
     </div>
     <div class="col-auto">
         <input type="number" name="threshold" id="threshold" class="form-control form-control-sm"
                style="width: 5rem" min="0" value="@Model.Threshold" />
     </div>
     <div class="col-auto">
-        <button class="btn btn-sm btn-outline-secondary">Apply</button>
+        <button class="btn btn-sm btn-outline-secondary">@L["Apply"]</button>
     </div>
 </form>
 
 @if (Model.AuthorFilter is not null)
 {
     <p>
-        Showing only proposals by <strong>@Model.AuthorFilterName</strong>.
-        <a asp-action="Index" asp-route-topicId="@Model.Topic.Id" asp-route-sort="@Model.Sort">Show everyone's</a>
+        @Html.Raw(L.Format("Showing only proposals by %name%.", ("name", $"<strong>{Html.Encode(Model.AuthorFilterName)}</strong>")))
+        <a asp-action="Index" asp-route-topicId="@Model.Topic.Id" asp-route-sort="@Model.Sort">@L["Show everyone's"]</a>
     </p>
 }
 
 @if (Model.Proposals.Count == 0)
 {
-    <p class="text-muted fst-italic">No proposals yet.</p>
+    <p class="text-muted fst-italic">@L["No proposals yet."]</p>
 }
 
 <div class="list-group mb-3">
@@ -94,17 +93,17 @@
                 <small class="text-muted">
                     <a asp-action="Index" asp-route-topicId="@Model.Topic.Id" asp-route-sort="@Model.Sort"
                        asp-route-author="@proposal.AuthorId" class="text-muted">@proposal.AuthorDisplayName</a>
-                    &middot; @proposal.CommentCount comment@(proposal.CommentCount == 1 ? "" : "s")
+                    &middot; @L.Format(proposal.CommentCount == 1 ? "%count% comment" : "%count% comments", ("count", proposal.CommentCount))
                     @if (!proposal.IsLocked)
                     {
                         <span class="badge bg-warning text-dark"
-                              title="Still open for improvement, so it cannot be voted on yet.">editable</span>
+                              title="@L["Still open for improvement, so it cannot be voted on yet."]">@L["editable"]</span>
                     }
                     @if (proposal.CollapsedDuplicates > 0)
                     {
                         <span class="badge bg-info text-dark"
-                              title="Folded together with proposals the crowd reported as duplicates.">
-                            +@proposal.CollapsedDuplicates duplicate@(proposal.CollapsedDuplicates == 1 ? "" : "s")
+                              title="@L["Folded together with proposals the crowd reported as duplicates."]">
+                            @L.Format(proposal.CollapsedDuplicates == 1 ? "+%count% duplicate" : "+%count% duplicates", ("count", proposal.CollapsedDuplicates))
                         </span>
                     }
                 </small>
@@ -112,23 +111,23 @@
             <div class="text-end text-nowrap">
                 @if (!proposal.IsLocked)
                 {
-                    <small class="text-muted">voting not open</small>
+                    <small class="text-muted">@L["voting not open"]</small>
                 }
                 else if (proposal.GroupScoreSum is { } groupScore)
                 {
                     @* Support that was split across duplicates belongs to the idea, not to
                        whichever wording happened to be listed. *@
                     <span class="h5">@(groupScore > 0 ? "+" : "")@groupScore</span><br />
-                    <small class="text-muted">combined across duplicates</small>
+                    <small class="text-muted">@L["combined across duplicates"]</small>
                 }
                 else if (proposal.ScoreSum is { } score)
                 {
                     <span class="h5">@(score > 0 ? "+" : "")@score</span><br />
-                    <small class="text-muted">@proposal.VoteCount vote@(proposal.VoteCount == 1 ? "" : "s")</small>
+                    <small class="text-muted">@L.Format(proposal.VoteCount == 1 ? "%count% vote" : "%count% votes", ("count", proposal.VoteCount))</small>
                 }
                 else
                 {
-                    <small class="text-muted">counts hidden</small>
+                    <small class="text-muted">@L["counts hidden"]</small>
                 }
             </div>
         </div>
@@ -140,40 +139,38 @@
 {
     <a class="btn btn-outline-secondary mb-3"
        asp-action="Index" asp-route-topicId="@Model.Topic.Id" asp-route-sort="@Model.Sort"
-       asp-route-author="@Model.AuthorFilter" asp-route-cursor="@Model.NextCursor">Show more</a>
+       asp-route-author="@Model.AuthorFilter" asp-route-cursor="@Model.NextCursor">@L["Show more"]</a>
 }
 
 @if (Model.CanAdd)
 {
     <div class="border-top pt-3 col-lg-9">
-        <h2 class="h5">Add a proposal</h2>
+        <h2 class="h5">@L["Add a proposal"]</h2>
         <form method="post" asp-action="Create" asp-route-topicId="@Model.Topic.Id">
             <div class="mb-2">
                 <textarea name="text" class="form-control" rows="2" required
                           maxlength="@Proposal.TextMaxLength"
-                          placeholder="One sentence — a single building block, not a whole solution."></textarea>
+                          placeholder="@L["One sentence — a single building block, not a whole solution."]"></textarea>
                 <div class="form-text">
-                    Up to @Proposal.TextMaxLength characters. If your idea needs more, it is more
-                    than one proposal — split it, so people can accept the parts they agree with.
+                    @L.Format("Up to %count% characters. If your idea needs more, it is more than one proposal — split it, so people can accept the parts they agree with.", ("count", Proposal.TextMaxLength))
                 </div>
             </div>
             <div class="row g-2 align-items-end">
                 <div class="col-auto">
-                    <label class="form-label mb-0" for="editableForDays">Stay editable for</label>
+                    <label class="form-label mb-0" for="editableForDays">@L["Stay editable for"]</label>
                     <select name="editableForDays" id="editableForDays" class="form-select">
-                        <option value="0">3 days (default)</option>
-                        <option value="1">1 day</option>
-                        <option value="7">7 days</option>
-                        <option value="14">14 days</option>
+                        <option value="0">@L["3 days (default)"]</option>
+                        <option value="1">@L["1 day"]</option>
+                        <option value="7">@L["7 days"]</option>
+                        <option value="14">@L["14 days"]</option>
                     </select>
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-primary">Add proposal</button>
+                    <button class="btn btn-primary">@L["Add proposal"]</button>
                 </div>
             </div>
             <div class="form-text">
-                While it stays editable you can improve it in response to comments, and nobody
-                can vote on it yet. You can end that window early at any time.
+                @L["While it stays editable you can improve it in response to comments, and nobody can vote on it yet. You can end that window early at any time."]
             </div>
         </form>
     </div>
@@ -181,7 +178,6 @@
 else if (Model.Topic.Phase != CDA.Domain.Topics.TopicPhase.Proposing)
 {
     <p class="text-muted">
-        This topic is still agreeing its requirements. Proposals open once the facilitator has
-        published them.
+        @L["This topic is still agreeing its requirements. Proposals open once the facilitator has published them."]
     </p>
 }

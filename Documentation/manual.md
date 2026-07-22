@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 12**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 13**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -696,7 +696,39 @@ closed topic accepts nothing further.
 
 ---
 
-## 16. Quick reference
+## 16. Reading it in another language
+
+The interface is offered in **English** and **Greek**. Pick one from the **🌐 Language** menu in
+the top bar; the choice is remembered on this device, signed in or not, so you only make it once.
+
+![The topic list in Greek](images/topics-list-el.png)
+
+### What is translated, and what is not
+
+The **interface** — every button, label, heading and explanation — is translated. What **people
+wrote** is not: a topic's subject, a proposal, a comment and a private message stay in whatever
+language their author typed them in. Translating those would mean rewriting someone's words, which
+is not the platform's to do. So a Greek reader sees Greek chrome around English (or Greek, or
+any-language) content, exactly as written.
+
+![A topic in Greek, with English content](images/topic-el.png)
+
+Dates and numbers follow the chosen language too — Greek writes a decimal point as a comma, and
+the pages respect that.
+
+### Correcting a translation
+
+The Greek ships as a starting point, not the last word. An administrator has a **Translations**
+screen (in the top bar) listing every phrase in the interface beside its Greek, and can correct
+any of them; the change takes effect immediately, with no redeployment. English is the source the
+phrases are written in, so it is not edited there.
+
+A phrase that has no translation yet simply shows in English rather than breaking — so the site is
+always usable, even mid-translation.
+
+---
+
+## 17. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -734,6 +766,9 @@ closed topic accepts nothing further.
 | How do I know they read my message? | Their side of the thread says *read* once they have opened it. |
 | My upload was refused. | Either it is over 10 MB, or it is a kind of file that could run. Only documents, images, PDFs and plain text are accepted. |
 | Should I attach it or cite it? | Cite it if it is on the web — a link keeps its context and can be rated. Attach only what has no link of its own. |
+| How do I read the site in Greek? | Pick it from the 🌐 Language menu in the top bar. The choice sticks on this device. |
+| Why is the topic still in English after I switched to Greek? | Only the interface is translated. What people wrote — subjects, proposals, comments — stays in the language they typed. |
+| The Greek for something is wrong. | An administrator can fix it on the Translations screen; the change shows at once. |
 
 ---
 
@@ -745,7 +780,6 @@ listed so this manual is not read as describing more than there is:
 | Feature | Phase |
 |---|---|
 | Email actually going out (a mail server is not configured; see [chapter 13](#13-being-told-what-happened)) | 12 |
-| A second interface language | 13 |
 
 The REST API is designed but not yet exposed; today the platform is the web interface only.
 

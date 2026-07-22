@@ -1,19 +1,18 @@
 @model CDA.Web.Models.ConversationListViewModel
 @{
-    ViewData["Title"] = "Messages";
+    ViewData["Title"] = L["Messages"];
 }
 
-<h1>Messages</h1>
+<h1>@L["Messages"]</h1>
 
 <p class="text-muted col-lg-9">
-    For the things that genuinely are between two people. Anything that bears on a topic belongs
-    in the topic, where everyone can see it and it counts towards a conclusion.
+    @L["For the things that genuinely are between two people. Anything that bears on a topic belongs in the topic, where everyone can see it and it counts towards a conclusion."]
 </p>
 
 @if (Model.Conversations.Count == 0)
 {
     <p class="text-muted fst-italic">
-        No messages. You can start one from anybody's profile.
+        @L["No messages. You can start one from anybody's profile."]
     </p>
 }
 
@@ -27,7 +26,7 @@
                 @conversation.WithDisplayName
                 @if (conversation.Unread > 0)
                 {
-                    <span class="badge bg-primary">@conversation.Unread new</span>
+                    <span class="badge bg-primary">@L.Format("%count% new", ("count", conversation.Unread))</span>
                 }
             </strong>
             <small class="text-muted">@conversation.LastAtUtc.ToString("d MMM yyyy HH:mm") UTC</small>

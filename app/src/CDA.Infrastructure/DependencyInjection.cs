@@ -1,6 +1,8 @@
 using System.Net;
 using CDA.Application.Abstractions;
+using CDA.Application.Localization;
 using CDA.Infrastructure.Attachments;
+using CDA.Infrastructure.Localization;
 using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Messaging;
 using CDA.Infrastructure.Notifications;
@@ -19,6 +21,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using MySqlConnector;
 
 namespace CDA.Infrastructure;
@@ -104,6 +107,16 @@ public static class DependencyInjection
             ?? new AttachmentOptions());
 
         services.AddHostedService<NotificationDispatcher>();
+
+        // Localization: one cached store, one localizer answering to both the app's contract and
+        // the framework's, and a best-effort seeder that fills in the shipped Greek on startup.
+        services.AddSingleton<LocalizationStore>();
+        services.AddSingleton<DatabaseLocalizer>();
+        services.AddSingleton<IAppLocalizer>(sp => sp.GetRequiredService<DatabaseLocalizer>());
+        services.AddSingleton<IStringLocalizer>(sp => sp.GetRequiredService<DatabaseLocalizer>());
+        services.AddSingleton<IStringLocalizerFactory, DatabaseLocalizerFactory>();
+        services.AddScoped<LocalizationService>();
+        services.AddHostedService<LocalizationSeeder>();
 
         return services;
     }

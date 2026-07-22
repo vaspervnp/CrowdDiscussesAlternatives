@@ -257,6 +257,29 @@ namespace CDA.Infrastructure.Persistence.Migrations
                     b.ToTable("ProposalGroups", (string)null);
                 });
 
+            modelBuilder.Entity("CDA.Domain.Localization.LocalizedText", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)")
+                        .UseCollation("utf8mb4_bin");
+
+                    b.Property<string>("Culture")
+                        .HasMaxLength(35)
+                        .HasColumnType("varchar(35)")
+                        .UseCollation("utf8mb4_bin");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Key", "Culture");
+
+                    b.HasIndex("Culture");
+
+                    b.ToTable("LocalizedTexts", (string)null);
+                });
+
             modelBuilder.Entity("CDA.Domain.Messaging.PrivateMessage", b =>
                 {
                     b.Property<Guid>("Id")

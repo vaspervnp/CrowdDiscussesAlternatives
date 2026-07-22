@@ -4,6 +4,7 @@ using CDA.Domain.Messaging;
 using CDA.Domain.Notifications;
 using CDA.Domain.Evaluation;
 using CDA.Domain.Groups;
+using CDA.Domain.Localization;
 using CDA.Domain.Parameters;
 using CDA.Domain.Proposals;
 using CDA.Domain.References;
@@ -68,6 +69,8 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     public DbSet<Attachment> Attachments => Set<Attachment>();
 
     public DbSet<Vote> Votes => Set<Vote>();
+
+    public DbSet<LocalizedText> LocalizedTexts => Set<LocalizedText>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

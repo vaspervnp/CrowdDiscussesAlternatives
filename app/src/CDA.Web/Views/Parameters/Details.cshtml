@@ -31,41 +31,40 @@
 
 <p class="mb-1">
     <a asp-action="Index" asp-route-topicId="@Model.TopicId" class="text-decoration-none">
-        &larr; Factor tables for @Model.TopicSubject
+        &larr; @L.Format("Factor tables for %topic%", ("topic", Model.TopicSubject))
     </a>
 </p>
 
 <h1 class="h3">@table.Name</h1>
 <p class="text-muted">
-    by @table.OwnerDisplayName
+    @L.Format("by %name%", ("name", table.OwnerDisplayName))
     @if (table.IsShared)
     {
-        <span class="badge bg-info text-dark">shared with the topic</span>
+        <span class="badge bg-info text-dark">@L["shared with the topic"]</span>
     }
     else if (table.IsMine)
     {
-        <span class="badge bg-secondary">private to you</span>
+        <span class="badge bg-secondary">@L["private to you"]</span>
     }
-    &middot; updated @table.UpdatedAtUtc.ToString("d MMM yyyy HH:mm") UTC
+    &middot; @L.Format("updated %date% UTC", ("date", table.UpdatedAtUtc.ToString("d MMM yyyy HH:mm")))
 </p>
 
 <p class="text-muted col-lg-9">
-    Read a row as <em>"if this factor increases, what happens to…"</em> and the columns as the
-    factors affected. The point is to notice where pushing on something that helps one part of
-    the problem quietly damages another.
+    @Html.Raw(L.Format("Read a row as %quote% and the columns as the factors affected. The point is to notice where pushing on something that helps one part of the problem quietly damages another.",
+        ("quote", $"<em>{L["\"if this factor increases, what happens to…\""]}</em>")))
 </p>
 
 <p class="text-muted col-lg-9">
-    <strong>@InfluenceEffect.StronglyPositive.Symbol()</strong> strongly helps &middot;
-    <strong>@InfluenceEffect.Positive.Symbol()</strong> helps &middot;
-    <strong>@InfluenceEffect.None.Symbol()</strong> no effect &middot;
-    <strong>@InfluenceEffect.Negative.Symbol()</strong> harms &middot;
-    <strong>@InfluenceEffect.StronglyNegative.Symbol()</strong> strongly harms
+    <strong>@InfluenceEffect.StronglyPositive.Symbol()</strong> @L["strongly helps"] &middot;
+    <strong>@InfluenceEffect.Positive.Symbol()</strong> @L["helps"] &middot;
+    <strong>@InfluenceEffect.None.Symbol()</strong> @L["no effect"] &middot;
+    <strong>@InfluenceEffect.Negative.Symbol()</strong> @L["harms"] &middot;
+    <strong>@InfluenceEffect.StronglyNegative.Symbol()</strong> @L["strongly harms"]
 </p>
 
 @if (table.Parameters.Count == 0)
 {
-    <p class="text-muted fst-italic">This table has no factors.</p>
+    <p class="text-muted fst-italic">@L["This table has no factors."]</p>
 }
 else if (table.IsMine)
 {
@@ -76,10 +75,10 @@ else if (table.IsMine)
             <table class="table table-bordered align-middle" style="min-width: 40rem">
                 <thead>
                     <tr>
-                        <th style="min-width: 12rem">An increase in&hellip;</th>
+                        <th style="min-width: 12rem">@L["An increase in…"]</th>
                         @foreach (var column in table.Parameters)
                         {
-                            <th class="small" style="min-width: 11rem">&hellip;affects @column.Name</th>
+                            <th class="small" style="min-width: 11rem">@L.Format("…affects %factor%", ("factor", column.Name))</th>
                         }
                     </tr>
                 </thead>
@@ -107,13 +106,13 @@ else if (table.IsMine)
                                         @foreach (var option in effects)
                                         {
                                             <option value="@option" selected="@(option == effect)">
-                                                @option.Symbol() @option.Describe()
+                                                @option.Symbol() @L[option.Describe()]
                                             </option>
                                         }
                                     </select>
                                     <input name="notes" class="form-control form-control-sm"
                                            maxlength="@ParameterInfluence.NoteMaxLength"
-                                           placeholder="why?" value="@cell?.Note" />
+                                           placeholder="@L["why?"]" value="@cell?.Note" />
                                 }
                             </td>
                         }
@@ -123,7 +122,7 @@ else if (table.IsMine)
             </table>
         </div>
 
-        <button class="btn btn-primary">Save the table</button>
+        <button class="btn btn-primary">@L["Save the table"]</button>
     </form>
 
     <form method="post" asp-action="Share" asp-route-topicId="@Model.TopicId" asp-route-id="@table.Id"
@@ -133,12 +132,12 @@ else if (table.IsMine)
            form would post the literal string "value" and bind as false either way. *@
         <input type="hidden" name="shared" value="@((!table.IsShared).ToString())" />
         <button class="btn btn-outline-secondary btn-sm">
-            @(table.IsShared ? "Stop sharing this table" : "Share this table with the topic")
+            @(table.IsShared ? L["Stop sharing this table"] : L["Share this table with the topic"])
         </button>
         <span class="form-text ms-2">
             @(table.IsShared
-                ? "Everyone in the topic can read it. It stays yours — nobody else can change it."
-                : "Only you can see it at the moment.")
+                ? L["Everyone in the topic can read it. It stays yours — nobody else can change it."]
+                : L["Only you can see it at the moment."])
         </span>
     </form>
 }
@@ -148,10 +147,10 @@ else
         <table class="table table-bordered align-middle" style="min-width: 40rem">
             <thead>
                 <tr>
-                    <th style="min-width: 12rem">An increase in&hellip;</th>
+                    <th style="min-width: 12rem">@L["An increase in…"]</th>
                     @foreach (var column in table.Parameters)
                     {
-                        <th class="small" style="min-width: 8rem">&hellip;affects @column.Name</th>
+                        <th class="small" style="min-width: 8rem">@L.Format("…affects %factor%", ("factor", column.Name))</th>
                     }
                 </tr>
             </thead>
@@ -172,7 +171,7 @@ else
                             var effect = cell?.Effect ?? InfluenceEffect.None;
 
                             <td class="text-center" style="@Shade(effect)"
-                                title="@row.Name @effect.Describe() @column.Name">
+                                title="@row.Name @L[effect.Describe()] @column.Name">
                                 <strong>@effect.Symbol()</strong>
                                 @if (cell?.Note is { } note)
                                 {

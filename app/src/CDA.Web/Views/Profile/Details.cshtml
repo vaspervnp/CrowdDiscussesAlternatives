@@ -13,34 +13,34 @@
     @Model.DisplayName
     @if (Model.IsOnline == true)
     {
-        <span class="badge bg-success align-middle">online</span>
+        <span class="badge bg-success align-middle">@L["online"]</span>
     }
 </h1>
 
-<p class="text-muted">Member since @Model.CreatedAtUtc.ToString("d MMMM yyyy")</p>
+<p class="text-muted">@L.Format("Member since %date%", ("date", Model.CreatedAtUtc.ToString("d MMMM yyyy")))</p>
 
 <dl class="row col-md-8">
     @if (Model.RealName is not null)
     {
-        <dt class="col-sm-3">Real name</dt>
+        <dt class="col-sm-3">@L["Real name"]</dt>
         <dd class="col-sm-9">@Model.RealName</dd>
     }
 
     @if (Model.Location is not null)
     {
-        <dt class="col-sm-3">Location</dt>
+        <dt class="col-sm-3">@L["Location"]</dt>
         <dd class="col-sm-9">@Model.Location</dd>
     }
 
     @if (Model.Email is not null)
     {
-        <dt class="col-sm-3">Email</dt>
+        <dt class="col-sm-3">@L["Email"]</dt>
         <dd class="col-sm-9">@Model.Email</dd>
     }
 
     @if (Model.Website is not null)
     {
-        <dt class="col-sm-3">Website</dt>
+        <dt class="col-sm-3">@L["Website"]</dt>
         @* nofollow/noopener: the URL is user-supplied and unverified. *@
         <dd class="col-sm-9">
             <a href="@Model.Website" rel="nofollow noopener noreferrer" target="_blank">@Model.Website</a>
@@ -50,16 +50,16 @@
 
 @if (Model.Biography is not null)
 {
-    <h2 class="h5">About</h2>
+    <h2 class="h5">@L["About"]</h2>
     <p style="white-space: pre-wrap">@Model.Biography</p>
 }
 
 @if (Model.IsSelf)
 {
-    <a asp-action="Edit" class="btn btn-outline-primary">Edit my profile</a>
+    <a asp-action="Edit" class="btn btn-outline-primary">@L["Edit my profile"]</a>
 }
 else if (User.Identity?.IsAuthenticated == true)
 {
     <a asp-controller="Messages" asp-action="Conversation" asp-route-withUserId="@Model.UserId"
-       class="btn btn-outline-secondary">Send a message</a>
+       class="btn btn-outline-secondary">@L["Send a message"]</a>
 }

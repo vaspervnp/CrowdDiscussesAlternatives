@@ -2,7 +2,7 @@
 @using CDA.Domain.Proposals
 @using CDA.Domain.References
 @{
-    ViewData["Title"] = "Proposal";
+    ViewData["Title"] = L["Proposal"];
     var proposal = Model.Proposal;
 }
 
@@ -13,7 +13,7 @@
 
 <p class="mb-1">
     <a asp-action="Index" asp-route-topicId="@Model.Topic.Id" class="text-decoration-none">
-        &larr; Proposals for @Model.Topic.Subject
+        &larr; @L.Format("Proposals for %topic%", ("topic", Model.Topic.Subject))
     </a>
 </p>
 
@@ -26,18 +26,15 @@
         &middot; @proposal.CreatedAtUtc.ToString("d MMM yyyy HH:mm") UTC
         @if (proposal.EditedAtUtc is not null)
         {
-            <span>&middot; edited</span>
+            <span>&middot; @L["edited"]</span>
         }
     </p>
 
     @if (!proposal.IsLocked)
     {
         <div class="alert alert-warning">
-            <strong>Still open for improvement.</strong>
-            The author can change the wording until
-            @proposal.EditableUntilUtc.ToString("d MMM yyyy HH:mm") UTC, so voting is not open
-            yet — a vote cast now would attach to wording that changes underneath it. Comments
-            are welcome, and are how the author finds out what to improve.
+            <strong>@L["Still open for improvement."]</strong>
+            @L.Format("The author can change the wording until %date% UTC, so voting is not open yet — a vote cast now would attach to wording that changes underneath it. Comments are welcome, and are how the author finds out what to improve.", ("date", proposal.EditableUntilUtc.ToString("d MMM yyyy HH:mm")))
         </div>
     }
 
@@ -45,28 +42,28 @@
     {
         <form method="post" asp-action="Edit" asp-route-topicId="@Model.Topic.Id" asp-route-id="@proposal.Id"
               class="border rounded p-3 mb-3">
-            <label class="form-label">Improve the wording</label>
+            <label class="form-label">@L["Improve the wording"]</label>
             <textarea name="text" class="form-control mb-2" rows="2" required
                       maxlength="@Proposal.TextMaxLength">@proposal.Text</textarea>
-            <button class="btn btn-sm btn-primary">Save</button>
+            <button class="btn btn-sm btn-primary">@L["Save"]</button>
         </form>
 
         <form method="post" asp-action="Lock" asp-route-topicId="@Model.Topic.Id" asp-route-id="@proposal.Id"
               class="mb-4">
-            <button class="btn btn-sm btn-outline-dark">Finish editing and open voting</button>
+            <button class="btn btn-sm btn-outline-dark">@L["Finish editing and open voting"]</button>
             <span class="form-text ms-2">
-                This cannot be undone — once people have voted, the wording is what they voted on.
+                @L["This cannot be undone — once people have voted, the wording is what they voted on."]
             </span>
         </form>
     }
 
     <div class="card my-4">
         <div class="card-body">
-            <h2 class="h6 card-title">Do you support this proposal?</h2>
+            <h2 class="h6 card-title">@L["Do you support this proposal?"]</h2>
 
             @if (!proposal.IsLocked)
             {
-                <p class="text-muted mb-0">Voting opens when the author finishes editing.</p>
+                <p class="text-muted mb-0">@L["Voting opens when the author finishes editing."]</p>
             }
             else
             {
@@ -74,44 +71,44 @@
                 {
                     <p class="mb-2">
                         <span class="h4">@(score > 0 ? "+" : "")@score</span>
-                        <small class="text-muted">from @proposal.VoteCount vote@(proposal.VoteCount == 1 ? "" : "s")</small>
+                        <small class="text-muted">@L.Format(proposal.VoteCount == 1 ? "from %count% vote" : "from %count% votes", ("count", proposal.VoteCount))</small>
                     </p>
                 }
                 else
                 {
-                    <p class="text-muted mb-2">This topic withholds its tallies until it closes.</p>
+                    <p class="text-muted mb-2">@L["This topic withholds its tallies until it closes."]</p>
                 }
 
                 @if (proposal.CanVote)
                 {
                     <form method="post" asp-action="Vote" asp-route-topicId="@Model.Topic.Id"
                           asp-route-id="@proposal.Id" class="d-inline">
-                        <button name="value" value="1" class="btn btn-sm @(proposal.MyVote == 1 ? "btn-success" : "btn-outline-success")">Support</button>
-                        <button name="value" value="0" class="btn btn-sm @(proposal.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">Neutral</button>
-                        <button name="value" value="-1" class="btn btn-sm @(proposal.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">Oppose</button>
+                        <button name="value" value="1" class="btn btn-sm @(proposal.MyVote == 1 ? "btn-success" : "btn-outline-success")">@L["Support"]</button>
+                        <button name="value" value="0" class="btn btn-sm @(proposal.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">@L["Neutral"]</button>
+                        <button name="value" value="-1" class="btn btn-sm @(proposal.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">@L["Oppose"]</button>
                     </form>
                     @if (proposal.MyVote is not null)
                     {
                         <form method="post" asp-action="WithdrawVote" asp-route-topicId="@Model.Topic.Id"
                               asp-route-id="@proposal.Id" class="d-inline">
-                            <button class="btn btn-sm btn-link text-muted">Withdraw my vote</button>
+                            <button class="btn btn-sm btn-link text-muted">@L["Withdraw my vote"]</button>
                         </form>
                     }
                 }
                 else if (User.Identity?.IsAuthenticated != true)
                 {
-                    <p class="mb-0"><a asp-controller="Account" asp-action="Login">Sign in</a> to vote.</p>
+                    <p class="mb-0">@Html.Raw(L.Format("%link% to vote.", ("link", $"<a href=\"{Url.Action("Login", "Account")}\">{L["Sign in"]}</a>")))</p>
                 }
             }
         </div>
     </div>
 
     @* --- Duplicates: reported by people, never decided by the platform --- *@
-    <h2 class="h5">Similar proposals</h2>
+    <h2 class="h5">@L["Similar proposals"]</h2>
 
     @if (Model.Similarities.Count == 0)
     {
-        <p class="text-muted fst-italic">Nobody has reported this as a duplicate of anything.</p>
+        <p class="text-muted fst-italic">@L["Nobody has reported this as a duplicate of anything."]</p>
     }
 
     @foreach (var similar in Model.Similarities)
@@ -123,17 +120,17 @@
                 </a>
                 @if (similar.IsActive)
                 {
-                    <span class="badge bg-info text-dark" title="Enough agreement to fold at this topic's default threshold.">active</span>
+                    <span class="badge bg-info text-dark" title="@L["Enough agreement to fold at this topic's default threshold."]">@L["active"]</span>
                 }
                 <div class="small text-muted">
-                    reported by
+                    @L["reported by"]
                     <a asp-controller="Profile" asp-action="Details" asp-route-id="@similar.ReportedByUserId"
                        class="text-muted">@similar.ReportedByDisplayName</a>
-                    &middot; @(similar.ScoreSum > 0 ? "+" : "")@similar.ScoreSum from
-                    @similar.VoteCount vote@(similar.VoteCount == 1 ? "" : "s")
+                    &middot; @(similar.ScoreSum > 0 ? "+" : "")@similar.ScoreSum
+                    @L.Format(similar.VoteCount == 1 ? "from %count% vote" : "from %count% votes", ("count", similar.VoteCount))
                     @if (similar.BetterWrittenProposalId == Model.Proposal.Id)
                     {
-                        <span>&middot; judged the better written of the two</span>
+                        <span>&middot; @L["judged the better written of the two"]</span>
                     }
                 </div>
                 @if (similar.Justification is not null)
@@ -145,12 +142,12 @@
             @if (Model.CanCite)
             {
                 <div class="mt-2">
-                    <span class="small me-2">Are these the same?</span>
+                    <span class="small me-2">@L["Are these the same?"]</span>
                     <form method="post" asp-action="VoteOnSimilarity" asp-route-topicId="@Model.Topic.Id"
                           asp-route-id="@Model.Proposal.Id" asp-route-similarityId="@similar.Id" class="d-inline">
-                        <button name="value" value="1" class="btn btn-sm @(similar.MyVote == 1 ? "btn-success" : "btn-outline-success")">Yes</button>
-                        <button name="value" value="0" class="btn btn-sm @(similar.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">Unsure</button>
-                        <button name="value" value="-1" class="btn btn-sm @(similar.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">No</button>
+                        <button name="value" value="1" class="btn btn-sm @(similar.MyVote == 1 ? "btn-success" : "btn-outline-success")">@L["Yes"]</button>
+                        <button name="value" value="0" class="btn btn-sm @(similar.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">@L["Unsure"]</button>
+                        <button name="value" value="-1" class="btn btn-sm @(similar.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">@L["No"]</button>
                     </form>
                 </div>
 
@@ -160,10 +157,7 @@
                      && similar.MyVoteOnOther is { } there && here != there)
                 {
                     <div class="alert alert-warning mt-2 mb-0 small">
-                        You agree these two say the same thing, but you voted
-                        <strong>@here</strong> on this one and <strong>@there</strong> on the other.
-                        That splits the support for a single idea across two entries. Consider
-                        voting the same on both.
+                        @L.Format("You agree these two say the same thing, but you voted %here% on this one and %there% on the other. That splits the support for a single idea across two entries. Consider voting the same on both.", ("here", here), ("there", there))
                     </div>
                 }
             }
@@ -174,33 +168,31 @@
     {
         <form method="post" asp-action="ReportSimilar" asp-route-topicId="@Model.Topic.Id"
               asp-route-id="@Model.Proposal.Id" class="border-top pt-3 mb-4">
-            <label class="form-label mb-0">Report a duplicate</label>
+            <label class="form-label mb-0">@L["Report a duplicate"]</label>
             <div class="form-text mb-2">
-                Paste the id of the other proposal from its address bar. Nothing is merged — you
-                are recording a claim that others can agree or disagree with.
+                @L["Paste the id of the other proposal from its address bar. Nothing is merged — you are recording a claim that others can agree or disagree with."]
             </div>
             <input name="otherProposalId" class="form-control mb-2" required
-                   placeholder="Other proposal id" />
+                   placeholder="@L["Other proposal id"]" />
             <input name="justification" class="form-control mb-2" maxlength="1000"
-                   placeholder="Why do you think they say the same thing? (optional)" />
+                   placeholder="@L["Why do you think they say the same thing? (optional)"]" />
             <select name="betterWrittenProposalId" class="form-select mb-2">
-                <option value="">No preference on wording</option>
-                <option value="@Model.Proposal.Id">This one is better written</option>
+                <option value="">@L["No preference on wording"]</option>
+                <option value="@Model.Proposal.Id">@L["This one is better written"]</option>
             </select>
-            <button class="btn btn-outline-primary btn-sm">Report as similar</button>
+            <button class="btn btn-outline-primary btn-sm">@L["Report as similar"]</button>
         </form>
     }
 
     @* --- Sources: what this proposal is argued from --- *@
-    <h2 class="h5">Sources</h2>
+    <h2 class="h5">@L["Sources"]</h2>
     <p class="text-muted">
-        Each source is judged on two separate questions, because they come apart: something can
-        be entirely accurate and beside the point, or highly relevant and unreliable.
+        @L["Each source is judged on two separate questions, because they come apart: something can be entirely accurate and beside the point, or highly relevant and unreliable."]
     </p>
 
     @if (Model.References.Count == 0)
     {
-        <p class="text-muted fst-italic">Nothing cited yet.</p>
+        <p class="text-muted fst-italic">@L["Nothing cited yet."]</p>
     }
 
     @foreach (var reference in Model.References)
@@ -213,12 +205,12 @@
                 </a>
                 <div class="small text-muted text-break">@reference.Url</div>
                 <div class="small text-muted">
-                    cited by
+                    @L["cited by"]
                     <a asp-controller="Profile" asp-action="Details" asp-route-id="@reference.CitedByUserId"
                        class="text-muted">@reference.CitedByDisplayName</a>
                     @if (reference.UsedByProposalCount > 1)
                     {
-                        <span>&middot; also supports @(reference.UsedByProposalCount - 1) other proposal@(reference.UsedByProposalCount == 2 ? "" : "s")</span>
+                        <span>&middot; @L.Format(reference.UsedByProposalCount == 2 ? "also supports %count% other proposal" : "also supports %count% other proposals", ("count", reference.UsedByProposalCount - 1))</span>
                     }
                 </div>
             </div>
@@ -230,13 +222,13 @@
                     var votes = aspect == ReferenceAspect.Accuracy ? reference.AccuracyVotes : reference.ImportanceVotes;
                     var mine = aspect == ReferenceAspect.Accuracy ? reference.MyAccuracyVote : reference.MyImportanceVote;
                     var question = aspect == ReferenceAspect.Accuracy
-                        ? "Is it accurate?"
-                        : "Does it matter here?";
+                        ? L["Is it accurate?"]
+                        : L["Does it matter here?"];
 
                     <div class="col-sm-6">
                         <div class="small fw-semibold">@question</div>
                         <div class="small text-muted mb-1">
-                            @(score > 0 ? "+" : "")@score from @votes vote@(votes == 1 ? "" : "s")
+                            @(score > 0 ? "+" : "")@score @L.Format(votes == 1 ? "from %count% vote" : "from %count% votes", ("count", votes))
                         </div>
                         @if (Model.CanCite)
                         {
@@ -260,28 +252,27 @@
         <form method="post" asp-action="AddReference" asp-route-topicId="@Model.Topic.Id"
               asp-route-id="@Model.Proposal.Id" class="border-top pt-3 mb-4">
             <div class="mb-2">
-                <label class="form-label mb-0">Cite a source</label>
+                <label class="form-label mb-0">@L["Cite a source"]</label>
                 <input name="url" class="form-control" placeholder="https://" required />
             </div>
             <div class="mb-2">
                 <input name="description" class="form-control" required maxlength="500"
-                       placeholder="What is it? e.g. 2024 city council traffic study, pages 12–18" />
+                       placeholder="@L["What is it? e.g. 2024 city council traffic study, pages 12–18"]" />
             </div>
-            <button class="btn btn-outline-primary btn-sm">Add source</button>
+            <button class="btn btn-outline-primary btn-sm">@L["Add source"]</button>
             <span class="form-text ms-2">
-                If this source is already cited elsewhere in the topic, it will be linked rather
-                than duplicated — so its rating stays in one place.
+                @L["If this source is already cited elsewhere in the topic, it will be linked rather than duplicated — so its rating stays in one place."]
             </span>
         </form>
     }
 
     @* --- Attachments: for what has no link of its own --- *@
     <section id="attachments">
-        <h2 class="h5">Attached files</h2>
+        <h2 class="h5">@L["Attached files"]</h2>
 
         @if (Model.Attachments.Count == 0)
         {
-            <p class="text-muted fst-italic">Nothing attached.</p>
+            <p class="text-muted fst-italic">@L["Nothing attached."]</p>
         }
 
         <ul class="list-unstyled">
@@ -307,24 +298,22 @@
                         <input type="file" name="file" class="form-control" required />
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-outline-primary btn-sm">Attach</button>
+                        <button class="btn btn-outline-primary btn-sm">@L["Attach"]</button>
                     </div>
                 </div>
                 <div class="form-text">
-                    Up to @(CDA.Domain.Attachments.Attachment.MaxSizeBytes / (1024 * 1024)) MB.
-                    Documents, spreadsheets, images, PDFs and plain text. If it is already on the
-                    web, cite it as a source instead — a link keeps its context.
+                    @L.Format("Up to %count% MB. Documents, spreadsheets, images, PDFs and plain text. If it is already on the web, cite it as a source instead — a link keeps its context.", ("count", CDA.Domain.Attachments.Attachment.MaxSizeBytes / (1024 * 1024)))
                 </div>
             </form>
         }
     </section>
 
     @* The conversation about the proposal, kept structurally apart from the proposal itself. *@
-    <h2 class="h5">Comments</h2>
+    <h2 class="h5">@L["Comments"]</h2>
 
     @if (Model.Comments.Count == 0)
     {
-        <p class="text-muted fst-italic">No comments yet.</p>
+        <p class="text-muted fst-italic">@L["No comments yet."]</p>
     }
 
     @foreach (var comment in Model.Comments)
@@ -339,7 +328,7 @@
             </div>
             @if (comment.IsDeleted)
             {
-                <p class="text-muted fst-italic mb-0">This comment was withdrawn.</p>
+                <p class="text-muted fst-italic mb-0">@L["This comment was withdrawn."]</p>
             }
             else
             {
@@ -353,8 +342,8 @@
         <form method="post" asp-action="PostComment" asp-route-topicId="@Model.Topic.Id"
               asp-route-id="@proposal.Id" class="mt-3">
             <textarea name="body" class="form-control" rows="3" maxlength="8000" required
-                      placeholder="@(proposal.IsLocked ? "Add a comment…" : "Suggest an improvement…")"></textarea>
-            <button class="btn btn-primary mt-2">Post comment</button>
+                      placeholder="@(proposal.IsLocked ? L["Add a comment…"] : L["Suggest an improvement…"])"></textarea>
+            <button class="btn btn-primary mt-2">@L["Post comment"]</button>
         </form>
     }
 </div>

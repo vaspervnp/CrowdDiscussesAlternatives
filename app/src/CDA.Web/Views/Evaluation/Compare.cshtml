@@ -1,30 +1,29 @@
 @model CDA.Web.Models.CompareViewModel
 @{
-    ViewData["Title"] = "Compare alternatives";
+    ViewData["Title"] = L["Compare alternatives"];
     var comparison = Model.Comparison;
     var evaluated = comparison.Alternatives.Where(a => a.HasBeenEvaluated).ToList();
 }
 
 <p class="mb-1">
     <a asp-controller="Groups" asp-action="Index" asp-route-topicId="@Model.TopicId"
-       class="text-decoration-none">&larr; Alternative solutions</a>
+       class="text-decoration-none">&larr; @L["Alternative solutions"]</a>
 </p>
-<h1 class="h3">My comparison</h1>
+<h1 class="h3">@L["My comparison"]</h1>
 
 <p class="text-muted col-lg-9">
-    Every alternative scored against the topic's requirements, under your weights.
-    <strong>Only you can see this.</strong>
+    @Html.Raw(L.Format("Every alternative scored against the topic's requirements, under your weights. %emphasis%",
+        ("emphasis", $"<strong>{L["Only you can see this."]}</strong>")))
 </p>
 
 @if (comparison.Requirements.Count == 0)
 {
-    <p class="text-muted fst-italic">This topic has no requirements to evaluate against.</p>
+    <p class="text-muted fst-italic">@L["This topic has no requirements to evaluate against."]</p>
 }
 else if (evaluated.Count == 0)
 {
     <p class="text-muted fst-italic">
-        You have not evaluated any alternative yet. Open one and score it against the
-        requirements; the results will line up here.
+        @L["You have not evaluated any alternative yet. Open one and score it against the requirements; the results will line up here."]
     </p>
 }
 else
@@ -35,8 +34,8 @@ else
         <table class="table table-bordered align-middle">
             <thead>
                 <tr>
-                    <th style="min-width: 18rem">Requirement</th>
-                    <th class="text-center" style="width: 6rem">Weight</th>
+                    <th style="min-width: 18rem">@L["Requirement"]</th>
+                    <th class="text-center" style="width: 6rem">@L["Weight"]</th>
                     @foreach (var alternative in evaluated)
                     {
                         <th style="min-width: 12rem">
@@ -60,7 +59,7 @@ else
                             @score
                             @if (requirement.Weight > 0)
                             {
-                                <small class="text-muted d-block">@(requirement.Weight * score) pts</small>
+                                <small class="text-muted d-block">@L.Format("%points% pts", ("points", requirement.Weight * score))</small>
                             }
                         </td>
                     }
@@ -69,14 +68,14 @@ else
             </tbody>
             <tfoot>
                 <tr class="table-light">
-                    <th colspan="2" class="text-end">Total</th>
+                    <th colspan="2" class="text-end">@L["Total"]</th>
                     @foreach (var alternative in evaluated)
                     {
                         <th class="text-center">
                             @alternative.Total
                             @if (alternative.Percentage is { } percent)
                             {
-                                <small class="d-block fw-normal text-muted">@percent% of the best possible</small>
+                                <small class="d-block fw-normal text-muted">@L.Format("%percent%% of the best possible", ("percent", percent))</small>
                             }
                         </th>
                     }
@@ -86,15 +85,13 @@ else
     </div>
 
     <p class="text-muted col-lg-9">
-        The percentage divides your total by what a perfect answer would score under the same
-        weights. A raw total on its own is hard to read — whether 34 is good depends on how many
-        requirements there are and how heavily you weighted them.
+        @L["The percentage divides your total by what a perfect answer would score under the same weights. A raw total on its own is hard to read — whether 34 is good depends on how many requirements there are and how heavily you weighted them."]
     </p>
 }
 
 @if (comparison.Alternatives.Any(a => !a.HasBeenEvaluated))
 {
-    <h2 class="h6 mt-4">Not yet evaluated</h2>
+    <h2 class="h6 mt-4">@L["Not yet evaluated"]</h2>
     <ul>
     @foreach (var alternative in comparison.Alternatives.Where(a => !a.HasBeenEvaluated))
     {

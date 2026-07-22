@@ -12,18 +12,18 @@
 <h1>@Model.Topic.Subject</h1>
 
 <p class="text-muted">
-    @Model.Topic.Phase
+    @L[Model.Topic.Phase.ToString()]
     @if (Model.Topic.Visibility == TopicVisibility.InviteOnly)
     {
-        <span class="badge bg-secondary">invite only</span>
+        <span class="badge bg-secondary">@L["invite only"]</span>
     }
     @if (Model.Topic.IsClosed)
     {
-        <span class="badge bg-dark">closed</span>
+        <span class="badge bg-dark">@L["closed"]</span>
     }
     @if (Model.Topic.ClosesAtUtc is { } closes)
     {
-        <span>&middot; to conclude by @closes.ToString("d MMMM yyyy")</span>
+        <span>&middot; @L.Format("to conclude by %date%", ("date", closes.ToString("d MMMM yyyy")))</span>
     }
 </p>
 
@@ -34,20 +34,19 @@
 
 <div class="card col-lg-6 my-4">
     <div class="card-body">
-        <h2 class="h6 card-title">How important is this topic?</h2>
+        <h2 class="h6 card-title">@L["How important is this topic?"]</h2>
 
         @if (Model.Topic.ScoreSum is { } score)
         {
             <p class="mb-2">
                 <span class="h4">@(score > 0 ? "+" : "")@score</span>
-                <small class="text-muted">from @Model.Topic.VoteCount vote@(Model.Topic.VoteCount == 1 ? "" : "s")</small>
+                <small class="text-muted">@L.Format(Model.Topic.VoteCount == 1 ? "from %count% vote" : "from %count% votes", ("count", Model.Topic.VoteCount))</small>
             </p>
         }
         else
         {
             <p class="text-muted mb-2">
-                Tallies are hidden until this topic closes, so that seeing the running total
-                does not shape how people vote. Ranking still applies.
+                @L["Tallies are hidden until this topic closes, so that seeing the running total does not shape how people vote. Ranking still applies."]
             </p>
         }
 
@@ -56,30 +55,30 @@
             <form method="post" asp-action="Vote" asp-route-id="@Model.Topic.Id" class="d-inline">
                 @* -1 / 0 / +1 are the only valid votes; 0 is a recorded abstention. *@
                 <button name="value" value="1" class="btn btn-sm @(Model.Topic.MyVote == 1 ? "btn-success" : "btn-outline-success")">
-                    Important
+                    @L["Important"]
                 </button>
                 <button name="value" value="0" class="btn btn-sm @(Model.Topic.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">
-                    Neutral
+                    @L["Neutral"]
                 </button>
                 <button name="value" value="-1" class="btn btn-sm @(Model.Topic.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">
-                    Not important
+                    @L["Not important"]
                 </button>
             </form>
 
             @if (Model.Topic.MyVote is not null)
             {
                 <form method="post" asp-action="WithdrawVote" asp-route-id="@Model.Topic.Id" class="d-inline">
-                    <button class="btn btn-sm btn-link text-muted">Withdraw my vote</button>
+                    <button class="btn btn-sm btn-link text-muted">@L["Withdraw my vote"]</button>
                 </form>
             }
         }
         else if (Model.Topic.IsClosed)
         {
-            <p class="text-muted mb-0">This topic has closed.</p>
+            <p class="text-muted mb-0">@L["This topic has closed."]</p>
         }
         else if (User.Identity?.IsAuthenticated != true)
         {
-            <p class="mb-0"><a asp-controller="Account" asp-action="Login">Sign in</a> to vote.</p>
+            <p class="mb-0">@Html.Raw(L.Format("%link% to vote.", ("link", $"<a href=\"{Url.Action("Login", "Account")}\">{L["Sign in"]}</a>")))</p>
         }
     </div>
 </div>
@@ -87,8 +86,8 @@
 @if (Model.Topic.CanJoin)
 {
     <form method="post" asp-action="Join" asp-route-id="@Model.Topic.Id" class="mb-3">
-        <button class="btn btn-outline-primary">Join this topic</button>
-        <span class="form-text ms-2">Members can add proposals and take part in the discussion.</span>
+        <button class="btn btn-outline-primary">@L["Join this topic"]</button>
+        <span class="form-text ms-2">@L["Members can add proposals and take part in the discussion."]</span>
     </form>
 }
 
@@ -96,28 +95,26 @@
 {
     <p>
         <a asp-controller="Proposals" asp-action="Index" asp-route-topicId="@Model.Topic.Id"
-           class="btn btn-primary">See the proposals</a>
+           class="btn btn-primary">@L["See the proposals"]</a>
         <a asp-controller="Groups" asp-action="Index" asp-route-topicId="@Model.Topic.Id"
-           class="btn btn-outline-primary">See the alternative solutions</a>
+           class="btn btn-outline-primary">@L["See the alternative solutions"]</a>
         <a asp-controller="Search" asp-action="Index" asp-route-topicId="@Model.Topic.Id"
-           class="btn btn-outline-secondary">Search the discussion</a>
+           class="btn btn-outline-secondary">@L["Search the discussion"]</a>
         <a asp-controller="Parameters" asp-action="Index" asp-route-topicId="@Model.Topic.Id"
-           class="btn btn-outline-secondary">Factor tables</a>
+           class="btn btn-outline-secondary">@L["Factor tables"]</a>
     </p>
 }
 
 @* --- Requirements: what an alternative solution has to achieve --- *@
 <section class="border-top pt-4 col-lg-9">
-    <h2 class="h5">Requirements</h2>
+    <h2 class="h5">@L["Requirements"]</h2>
     <p class="text-muted">
-        What any solution to this topic must achieve. Agreed here during the discussion, then
-        fixed — groups of proposals are scored against this list later, so it stops changing
-        once the topic opens for proposals.
+        @L["What any solution to this topic must achieve. Agreed here during the discussion, then fixed — groups of proposals are scored against this list later, so it stops changing once the topic opens for proposals."]
     </p>
 
     @if (Model.Requirements.Count == 0)
     {
-        <p class="text-muted fst-italic">Nothing agreed yet.</p>
+        <p class="text-muted fst-italic">@L["Nothing agreed yet."]</p>
     }
     else
     {
@@ -133,15 +130,15 @@
                     <span class="ms-2 text-nowrap">
                         <form method="post" asp-action="MoveRequirement" asp-route-id="@Model.Topic.Id"
                               asp-route-requirementId="@requirement.Id" class="d-inline">
-                            <button name="up" value="true" class="btn btn-sm btn-link p-0" title="Move up">&uarr;</button>
+                            <button name="up" value="true" class="btn btn-sm btn-link p-0" title="@L["Move up"]">&uarr;</button>
                         </form>
                         <form method="post" asp-action="MoveRequirement" asp-route-id="@Model.Topic.Id"
                               asp-route-requirementId="@requirement.Id" class="d-inline">
-                            <button name="up" value="false" class="btn btn-sm btn-link p-0" title="Move down">&darr;</button>
+                            <button name="up" value="false" class="btn btn-sm btn-link p-0" title="@L["Move down"]">&darr;</button>
                         </form>
                         <form method="post" asp-action="RemoveRequirement" asp-route-id="@Model.Topic.Id"
                               asp-route-requirementId="@requirement.Id" class="d-inline">
-                            <button class="btn btn-sm btn-link text-danger p-0 ms-2">Remove</button>
+                            <button class="btn btn-sm btn-link text-danger p-0 ms-2">@L["Remove"]</button>
                         </form>
                     </span>
                 }
@@ -154,33 +151,31 @@
     {
         <form method="post" asp-action="AddRequirement" asp-route-id="@Model.Topic.Id" class="row g-2">
             <div class="col">
-                <input name="text" class="form-control" placeholder="A solution must…" maxlength="500" required />
+                <input name="text" class="form-control" placeholder="@L["A solution must…"]" maxlength="500" required />
             </div>
             <div class="col-auto">
-                <button class="btn btn-outline-primary">Add requirement</button>
+                <button class="btn btn-outline-primary">@L["Add requirement"]</button>
             </div>
         </form>
     }
     else if (Model.Topic.CanAdminister)
     {
         <p class="text-muted fst-italic">
-            Settled when this topic opened for proposals. Changing them now would invalidate
-            evaluations already made against them.
+            @L["Settled when this topic opened for proposals. Changing them now would invalidate evaluations already made against them."]
         </p>
     }
 </section>
 
 @* --- Discussion: the conversation around the topic, kept apart from proposals --- *@
 <section class="border-top pt-4 mt-4 col-lg-9">
-    <h2 class="h5">Discussion</h2>
+    <h2 class="h5">@L["Discussion"]</h2>
     <p class="text-muted">
-        Clarify the subject and work out the requirements here. Proposals come later and stay
-        separate from this conversation.
+        @L["Clarify the subject and work out the requirements here. Proposals come later and stay separate from this conversation."]
     </p>
 
     @if (Model.Comments.Count == 0)
     {
-        <p class="text-muted fst-italic">No comments yet.</p>
+        <p class="text-muted fst-italic">@L["No comments yet."]</p>
     }
 
     @foreach (var comment in Model.Comments)
@@ -195,7 +190,7 @@
                     @comment.CreatedAtUtc.ToString("d MMM yyyy HH:mm") UTC
                     @if (comment.EditedAtUtc is not null)
                     {
-                        <span title="Edited">&middot; edited</span>
+                        <span title="@L["Edited"]">&middot; @L["edited"]</span>
                     }
                 </small>
             </div>
@@ -203,7 +198,7 @@
             @if (comment.IsDeleted)
             {
                 @* A tombstone, not a removal: replies below stop making sense otherwise. *@
-                <p class="text-muted fst-italic mb-0">This comment was withdrawn.</p>
+                <p class="text-muted fst-italic mb-0">@L["This comment was withdrawn."]</p>
             }
             else
             {
@@ -212,7 +207,7 @@
                 {
                     <form method="post" asp-action="DeleteComment" asp-route-id="@Model.Topic.Id"
                           asp-route-commentId="@comment.Id">
-                        <button class="btn btn-sm btn-link text-muted p-0">Withdraw</button>
+                        <button class="btn btn-sm btn-link text-muted p-0">@L["Withdraw"]</button>
                     </form>
                 }
             }
@@ -223,35 +218,35 @@
     {
         <form method="post" asp-action="PostComment" asp-route-id="@Model.Topic.Id" class="mt-3">
             <textarea name="body" class="form-control" rows="3" maxlength="8000" required
-                      placeholder="Add to the discussion…"></textarea>
-            <button class="btn btn-primary mt-2">Post comment</button>
+                      placeholder="@L["Add to the discussion…"]"></textarea>
+            <button class="btn btn-primary mt-2">@L["Post comment"]</button>
             @if (!Model.Topic.IsMember)
             {
-                <span class="form-text ms-2">Posting will add you to this topic.</span>
+                <span class="form-text ms-2">@L["Posting will add you to this topic."]</span>
             }
         </form>
     }
     else if (User.Identity?.IsAuthenticated != true)
     {
-        <p><a asp-controller="Account" asp-action="Login">Sign in</a> to take part.</p>
+        <p>@Html.Raw(L.Format("%link% to take part.", ("link", $"<a href=\"{Url.Action("Login", "Account")}\">{L["Sign in"]}</a>")))</p>
     }
 </section>
 
 @if (Model.Topic.CanAdminister && !Model.Topic.IsClosed)
 {
     <div class="border-top pt-3 mt-4">
-        <h2 class="h6">Facilitator</h2>
+        <h2 class="h6">@L["Facilitator"]</h2>
         <form method="post" asp-action="ChangePhase" asp-route-id="@Model.Topic.Id" class="d-inline">
             @if (Model.Topic.Phase == TopicPhase.Discussing)
             {
                 <button name="phase" value="@TopicPhase.Proposing" class="btn btn-sm btn-outline-primary">
-                    Open for proposals
+                    @L["Open for proposals"]
                 </button>
             }
             <button name="phase" value="@TopicPhase.Closed" class="btn btn-sm btn-outline-dark">
-                Close the topic
+                @L["Close the topic"]
             </button>
         </form>
-        <div class="form-text">Phases only move forward; a closed topic cannot be reopened.</div>
+        <div class="form-text">@L["Phases only move forward; a closed topic cannot be reopened."]</div>
     </div>
 }

@@ -19,8 +19,9 @@ namespace CDA.Web.Models;
 
 public sealed class CreateTopicViewModel
 {
-    [Required]
-    [StringLength(Topic.SubjectMaxLength, MinimumLength = 5)]
+    [Required(ErrorMessage = "A subject is required.")]
+    [StringLength(Topic.SubjectMaxLength, MinimumLength = 5,
+        ErrorMessage = "A subject is between 5 and 200 characters.")]
     [Display(Name = "Subject", Description = "The question the crowd is being asked to solve.")]
     public string Subject { get; set; } = string.Empty;
 

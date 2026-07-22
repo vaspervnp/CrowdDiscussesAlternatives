@@ -1,8 +1,34 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = L["Home"];
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="px-4 py-4 my-2 text-center">
+    <h1 class="display-5 fw-bold">@L["Crowd Discusses Alternatives"]</h1>
+    <div class="col-lg-8 mx-auto">
+        <p class="lead mb-4">
+            @L["A place where a group works out not the one right answer, but the handful of good ones — and then weighs them against what actually matters."]
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a asp-controller="Topics" asp-action="Index" class="btn btn-primary btn-lg px-4 gap-3">@L["Browse topics"]</a>
+            @if (User.Identity?.IsAuthenticated != true)
+            {
+                <a asp-controller="Account" asp-action="Register" class="btn btn-outline-secondary btn-lg px-4">@L["Register"]</a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row col-lg-10 mx-auto g-4 py-3">
+    <div class="col-md-4">
+        <h2 class="h5">@L["Agree what matters first"]</h2>
+        <p class="text-muted">@L["A topic starts by settling the requirements a good answer has to meet, before any answer is on the table."]</p>
+    </div>
+    <div class="col-md-4">
+        <h2 class="h5">@L["Propose, don’t just comment"]</h2>
+        <p class="text-muted">@L["Proposals are kept apart from the discussion around them, so the real options do not get buried in the talk."]</p>
+    </div>
+    <div class="col-md-4">
+        <h2 class="h5">@L["Alternatives, not one winner"]</h2>
+        <p class="text-muted">@L["Proposals are assembled into whole alternative solutions, and each is weighed against the agreed requirements."]</p>
+    </div>
 </div>

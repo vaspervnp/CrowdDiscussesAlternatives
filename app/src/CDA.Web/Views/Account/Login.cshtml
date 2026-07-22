@@ -1,32 +1,32 @@
 @model CDA.Web.Models.LoginViewModel
 @{
-    ViewData["Title"] = "Sign in";
+    ViewData["Title"] = L["Sign in"];
 }
 
-<h1>Sign in</h1>
+<h1>@L["Sign in"]</h1>
 
 <form method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]" class="col-md-6">
     <div asp-validation-summary="All" class="text-danger"></div>
 
     <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
+        <label asp-for="Email" class="form-label">@L["Email"]</label>
         <input asp-for="Email" class="form-control" autocomplete="email" />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
+        <label asp-for="Password" class="form-label">@L["Password"]</label>
         <input asp-for="Password" class="form-control" autocomplete="current-password" />
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
     <div class="form-check mb-3">
         <input asp-for="RememberMe" class="form-check-input" />
-        <label asp-for="RememberMe" class="form-check-label"></label>
+        <label asp-for="RememberMe" class="form-check-label">@L["Stay signed in"]</label>
     </div>
 
-    <button type="submit" class="btn btn-primary">Sign in</button>
-    <a asp-action="Register" class="btn btn-link">Create an account</a>
+    <button type="submit" class="btn btn-primary">@L["Sign in"]</button>
+    <a asp-action="Register" class="btn btn-link">@L["Create an account"]</a>
 </form>
 
 @section Scripts {

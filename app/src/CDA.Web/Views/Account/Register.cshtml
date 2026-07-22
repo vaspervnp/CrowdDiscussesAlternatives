@@ -1,44 +1,43 @@
 @model CDA.Web.Models.RegisterViewModel
 @{
-    ViewData["Title"] = "Create an account";
+    ViewData["Title"] = L["Create an account"];
 }
 
-<h1>Create an account</h1>
+<h1>@L["Create an account"]</h1>
 
 <form method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]" class="col-md-6">
     <div asp-validation-summary="All" class="text-danger"></div>
 
     <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
+        <label asp-for="Email" class="form-label">@L["Email"]</label>
         <input asp-for="Email" class="form-control" autocomplete="email" />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="DisplayName" class="form-label"></label>
+        <label asp-for="DisplayName" class="form-label">@L["Display name"]</label>
         <input asp-for="DisplayName" class="form-control" autocomplete="nickname" />
         <div class="form-text">
-            Shown on every proposal, comment and vote you make. It cannot be hidden, so choose
-            a name you are happy to be known by.
+            @L["Shown on every proposal, comment and vote you make. It cannot be hidden, so choose a name you are happy to be known by."]
         </div>
         <span asp-validation-for="DisplayName" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
+        <label asp-for="Password" class="form-label">@L["Password"]</label>
         <input asp-for="Password" class="form-control" autocomplete="new-password" />
-        <div class="form-text">At least 12 characters.</div>
+        <div class="form-text">@L["At least 12 characters."]</div>
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="ConfirmPassword" class="form-label"></label>
+        <label asp-for="ConfirmPassword" class="form-label">@L["Confirm password"]</label>
         <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
         <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Create account</button>
-    <a asp-action="Login" class="btn btn-link">I already have an account</a>
+    <button type="submit" class="btn btn-primary">@L["Create account"]</button>
+    <a asp-action="Login" class="btn btn-link">@L["I already have an account"]</a>
 </form>
 
 @section Scripts {

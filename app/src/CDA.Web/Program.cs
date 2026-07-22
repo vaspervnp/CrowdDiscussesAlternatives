@@ -15,8 +15,28 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // MVC views and REST endpoints share one host, so they share one auth pipeline and
 // need no CORS between them. See Documentation/devplan.md section 2.
-builder.Services.AddControllersWithViews();
+// DataAnnotations validation messages resolve through the same DB-backed localizer that the
+// views use, so a rejected form speaks the reader's language too.
+builder.Services.AddControllersWithViews()
+    .AddDataAnnotationsLocalization();
 builder.Services.AddOpenApi();
+
+// Emit non-Latin text as itself, not as &#x…; entities. The default HTML encoder escapes
+// everything outside Basic Latin, which turns every Greek page into a wall of numeric character
+// references — correct, but unreadable in the source and needlessly large. Allowing the full
+// range is the right default for a platform whose whole point is a second alphabet.
+builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(options =>
+    options.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(
+        System.Text.Unicode.UnicodeRanges.All));
+
+// The languages the interface is offered in. English is the source (keys are English text);
+// Greek ships translated and is editable through the admin screen.
+var supportedCultures = new[] { "en-GB", "el-GR" };
+
+builder.Services.Configure<RequestLocalizationOptions>(options => options
+    .SetDefaultCulture(supportedCultures[0])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures));
 
 // Errors leave the API as RFC 9457 problem details rather than as HTML or a bare status.
 builder.Services.AddProblemDetails(options =>
@@ -66,14 +86,12 @@ else
     app.UseHsts();
 }
 
-// Without this the app formats dates and numbers in whatever culture the host machine
-// happens to run, so the same page renders differently on a developer's laptop and on the
-// server. Pinned to English for now; Phase 13 makes the culture a user choice and adds the
-// translated strings to go with it.
-app.UseRequestLocalization(new RequestLocalizationOptions()
-    .SetDefaultCulture("en-GB")
-    .AddSupportedCultures("en-GB", "el-GR")
-    .AddSupportedUICultures("en-GB", "el-GR"));
+// Chooses the request's language, and with it how dates and numbers are formatted. The order
+// the framework consults is query string, then the culture cookie, then the browser's
+// Accept-Language — so a visitor's own language is honoured on first arrival, and a deliberate
+// choice (which CultureController writes to the cookie) overrides it and sticks. The options
+// are configured above, next to the supported-cultures list.
+app.UseRequestLocalization();
 
 app.UseHttpsRedirection();
 app.UseRouting();

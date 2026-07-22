@@ -22,7 +22,7 @@
 
     <li class="nav-item">
         <a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">
-            Notifications
+            @L["Notifications"]
             @if (unreadNotifications > 0)
             {
                 <span class="badge bg-primary">@unreadNotifications</span>
@@ -31,7 +31,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link text-dark" asp-controller="Messages" asp-action="Index">
-            Messages
+            @L["Messages"]
             @if (unreadMessages > 0)
             {
                 <span class="badge bg-primary">@unreadMessages</span>
@@ -39,22 +39,28 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Profile" asp-action="Edit">My profile</a>
+        <a class="nav-link text-dark" asp-controller="Profile" asp-action="Edit">@L["My profile"]</a>
     </li>
+    @if (User.IsInRole(CdaRole.Administrator))
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-controller="Localization" asp-action="Index">@L["Translations"]</a>
+        </li>
+    }
     <li class="nav-item">
         @* A POST, so that a link on another site cannot sign the user out. *@
         <form method="post" asp-controller="Account" asp-action="Logout">
-            <button type="submit" class="nav-link btn btn-link text-dark">Sign out</button>
+            <button type="submit" class="nav-link btn btn-link text-dark">@L["Sign out"]</button>
         </form>
     </li>
 }
 else
 {
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Register</a>
+        <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">@L["Register"]</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Sign in</a>
+        <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">@L["Sign in"]</a>
     </li>
 }
 </ul>
