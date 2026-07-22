@@ -3,6 +3,7 @@ using CDA.Application.Proposals;
 using CDA.Application.Topics;
 using CDA.Domain.Topics;
 using CDA.Infrastructure.Discussion;
+using CDA.Infrastructure.Evaluation;
 using CDA.Infrastructure.Groups;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.References;
@@ -121,6 +122,24 @@ public sealed class AssembleGroupViewModel
     public Guid? ImprovesGroupId { get; init; }
 
     public string? ImprovesDescription { get; init; }
+}
+
+public sealed class EvaluateViewModel
+{
+    public required Guid TopicId { get; init; }
+
+    public required string TopicSubject { get; init; }
+
+    public required EvaluationView Evaluation { get; init; }
+}
+
+public sealed class CompareViewModel
+{
+    public required Guid TopicId { get; init; }
+
+    public required string TopicSubject { get; init; }
+
+    public required Comparison Comparison { get; init; }
 }
 
 public sealed class TopicListViewModel

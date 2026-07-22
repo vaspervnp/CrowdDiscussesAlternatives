@@ -16,12 +16,19 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="mb-0">Alternative solutions</h1>
-    @if (Model.CanAssemble)
-    {
-        <a asp-action="Assemble" asp-route-topicId="@Model.Topic.Id" class="btn btn-primary">
-            Assemble an alternative
-        </a>
-    }
+    <div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-controller="Evaluation" asp-action="Compare" asp-route-topicId="@Model.Topic.Id"
+               class="btn btn-outline-secondary">My comparison</a>
+        }
+        @if (Model.CanAssemble)
+        {
+            <a asp-action="Assemble" asp-route-topicId="@Model.Topic.Id" class="btn btn-primary">
+                Assemble an alternative
+            </a>
+        }
+    </div>
 </div>
 
 <p class="text-muted col-lg-9">

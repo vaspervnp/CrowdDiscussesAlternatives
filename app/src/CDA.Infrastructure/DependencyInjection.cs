@@ -1,6 +1,7 @@
 using System.Net;
 using CDA.Application.Abstractions;
 using CDA.Infrastructure.Discussion;
+using CDA.Infrastructure.Evaluation;
 using CDA.Infrastructure.Groups;
 using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
@@ -72,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<SimilarityVotingService>();
         services.AddScoped<GroupService>();
         services.AddScoped<GroupVotingService>();
+        services.AddScoped<EvaluationService>();
 
         return services;
     }

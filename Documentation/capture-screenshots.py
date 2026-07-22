@@ -177,6 +177,20 @@ def comment_on_group(page, group_url, body):
     page.wait_for_load_state("networkidle")
 
 
+def evaluate(page, topic_url, group_url, weights, scores):
+    """Fills in the private evaluation form for one alternative."""
+    group_id = group_url.rsplit("/", 1)[-1]
+    page.goto(f"{topic_url}/evaluate/{group_id}")
+    weight_selects = page.query_selector_all("select[name=weights]")
+    score_selects = page.query_selector_all("select[name=scores]")
+    for select, value in zip(weight_selects, weights):
+        select.select_option(str(value))
+    for select, value in zip(score_selects, scores):
+        select.select_option(str(value))
+    page.click("main form button[type=submit]")
+    page.wait_for_load_state("networkidle")
+
+
 def reset_database():
     """Start from an empty database so the captures are reproducible."""
     import pymysql
@@ -184,7 +198,8 @@ def reset_database():
                           ssl={"ssl_mode": "REQUIRED"}, database=DB_NAME, connect_timeout=15)
     cur = con.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
-    for t in ("Comments", "Requirements", "Votes", "SimilarityReports", "GroupItems",
+    for t in ("Comments", "RequirementScores", "RequirementWeights", "Requirements", "Votes",
+              "SimilarityReports", "GroupItems",
               "ProposalGroups", "ProposalReferences", "References", "TopicUserReputations",
               "Proposals", "TopicMembers", "Topics", "UserProfiles", "AspNetUserClaims",
               "AspNetUserLogins", "AspNetUserRoles", "AspNetUserTokens", "AspNetUsers"):
@@ -379,6 +394,18 @@ def main():
 
         page.goto(f"{BASE}{focused}")
         shot(page, "alternative-detail")
+
+        print("evaluating the alternatives privately")
+        # Chair cares most about running time; the focused record scores well on it, the
+        # retrospective does not.
+        evaluate(page, songs, focused, weights=[5, 2, 3], scores=[5, 4, 4])
+        evaluate(page, songs, retrospective, weights=[5, 2, 3], scores=[1, 5, 3])
+
+        print("capturing the evaluation form and comparison")
+        page.goto(f"{songs}/evaluate/{focused.rsplit('/', 1)[-1]}")
+        shot(page, "evaluate-form")
+        page.goto(f"{songs}/evaluate")
+        shot(page, "evaluate-compare")
 
         print("capturing the privacy controls")
         page.goto(f"{BASE}/profiles/me")

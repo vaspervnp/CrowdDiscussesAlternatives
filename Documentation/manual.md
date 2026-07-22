@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 7**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 8**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -434,7 +434,61 @@ is never silent.
 
 ---
 
-## 10. Quick reference
+## 10. Weighing alternatives up
+
+Voting on an alternative is a single judgement about a complicated thing. **Evaluate against the
+requirements** breaks that judgement into its parts, so you can work out what you think before
+committing to it.
+
+![The evaluation form for one alternative](images/evaluate-form.png)
+
+Each requirement gets two numbers from you:
+
+| | |
+|---|---|
+| **How much it matters** | 0 (irrelevant to me) to 5 (decisive). Your view of the *requirement*. |
+| **How well this meets it** | 0 (not at all) to 5 (fully). Your view of *this alternative*. |
+
+The total is weight × score, summed. A requirement you weight 0 cannot influence the result
+however well an alternative scores on it.
+
+### Your weights apply across the whole topic
+
+This is the one thing worth understanding properly. **Weights belong to you and the topic, not
+to the alternative you happen to be looking at.** Changing how much a requirement matters
+changes it everywhere in that topic, and the form says so.
+
+That is not a limitation, it is the point. If each alternative carried its own weights, every
+column would be scored on a different scale and putting them next to each other would mean
+nothing — you could reach whatever conclusion you liked by adjusting the weights to suit the
+answer you already preferred. Sharing them makes the comparison sound by construction.
+
+### Comparing them
+
+**My comparison** lays out every alternative you have evaluated, side by side, under those
+shared weights.
+
+![Alternatives compared side by side](images/evaluate-compare.png)
+
+The percentage divides your total by what a perfect answer would score under the same weights. A
+raw total on its own is hard to read: whether 45 is good depends on how many requirements there
+are and how heavily you weighted them.
+
+In the example above, the two alternatives are close on two requirements and far apart on the
+one weighted most heavily — which is exactly the kind of thing a single up-or-down vote hides.
+
+### It is private
+
+**Nobody else can see your evaluation** — not the facilitator, not the person who assembled the
+alternative. The vote is the public act; the working behind it is not. Publishing it would turn
+a private weighing-up into one more thing to be judged on, and make people reluctant to record
+an honest assessment.
+
+You can re-evaluate at any time, and a new evaluation replaces the old one.
+
+---
+
+## 11. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -456,6 +510,9 @@ is never silent.
 | Why is one alternative listed above another with the same score? | Its author is among the topic's best-regarded citers of sources. |
 | I agree with most of an alternative but not all of it. | Build a variant: keep the combination, change the part you would do differently. |
 | Why must I describe my alternative? | The selection alone does not explain the reasoning behind it, and that reasoning is most of what distinguishes one answer from another. |
+| Can anyone see how I scored an alternative? | No. Evaluations are private to you — the vote is the public act, the reasoning behind it is not. |
+| I changed a weight and another alternative's total moved. | Weights apply across the whole topic. That is what lets the totals be compared with each other. |
+| What does the percentage mean? | Your total as a share of what a perfect answer would score under your own weights. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
 
 ---
@@ -467,7 +524,6 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| Scoring a group against the requirements with your own weightings | 8 |
 | Searching comments with AND/OR queries | 9 |
 | The qualitative table of how key factors influence each other | 11 |
 | Email notification, personal messages, file attachments | 12 |

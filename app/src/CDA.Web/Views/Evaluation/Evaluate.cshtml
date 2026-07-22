@@ -1,0 +1,98 @@
+@model CDA.Web.Models.EvaluateViewModel
+@using CDA.Domain.Evaluation
+@{
+    ViewData["Title"] = "Evaluate an alternative";
+    var evaluation = Model.Evaluation;
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-warning">@error</div>
+}
+
+<p class="mb-1">
+    <a asp-controller="Groups" asp-action="Details" asp-route-topicId="@Model.TopicId"
+       asp-route-id="@evaluation.GroupId" class="text-decoration-none">
+        &larr; @evaluation.GroupDescription
+    </a>
+</p>
+<h1 class="h3">Evaluate this alternative</h1>
+
+<p class="text-muted col-lg-9">
+    Score how well this combination satisfies each requirement the topic agreed on, weighted by
+    how much each requirement matters to you. This is a tool for thinking before you vote —
+    <strong>nobody else can see it</strong>.
+</p>
+
+<form method="post" class="col-lg-10">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Requirement</th>
+                <th style="width: 11rem">
+                    How much it matters<br />
+                    <small class="text-muted fw-normal">to you, across this topic</small>
+                </th>
+                <th style="width: 11rem">
+                    How well this meets it<br />
+                    <small class="text-muted fw-normal">this alternative only</small>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var row in evaluation.Rows)
+        {
+            <tr>
+                <td>
+                    @row.Text
+                    <input type="hidden" name="requirementIds" value="@row.RequirementId" />
+                </td>
+                <td>
+                    <select name="weights" class="form-select form-select-sm">
+                        @for (var w = RequirementWeight.Minimum; w <= RequirementWeight.Maximum; w++)
+                        {
+                            <option value="@w" selected="@(w == row.Weight)">
+                                @(w == 0 ? "0 — not at all" : w == 5 ? "5 — decisive" : w.ToString())
+                            </option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select name="scores" class="form-select form-select-sm">
+                        @for (var s = RequirementScore.Minimum; s <= RequirementScore.Maximum; s++)
+                        {
+                            <option value="@s" selected="@(s == row.Score)">
+                                @(s == 0 ? "0 — not at all" : s == 5 ? "5 — fully" : s.ToString())
+                            </option>
+                        }
+                    </select>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    @* Weights are shared across the topic on purpose — see the manual. Saying so here is not
+       optional: otherwise changing one would silently rewrite every other evaluation. *@
+    <div class="alert alert-light border">
+        <strong>Weights carry across this topic.</strong>
+        Changing how much a requirement matters to you also changes it in every other
+        alternative you evaluate here. That is what lets the totals be compared with each
+        other — if each alternative had its own weights, the scores would be on different
+        scales and comparing them would mean nothing.
+    </div>
+
+    @if (evaluation.HasBeenEvaluated)
+    {
+        <p class="text-muted">
+            You last evaluated this on @evaluation.UpdatedAtUtc!.Value.ToString("d MMM yyyy HH:mm") UTC —
+            scoring @evaluation.Total@(evaluation.Percentage is { } percent ? $" ({percent}%)" : "").
+            Re-evaluating replaces that.
+        </p>
+    }
+
+    <button type="submit" class="btn btn-primary">Save my evaluation</button>
+    <a asp-action="Compare" asp-route-topicId="@Model.TopicId" class="btn btn-link">
+        Compare all alternatives
+    </a>
+</form>

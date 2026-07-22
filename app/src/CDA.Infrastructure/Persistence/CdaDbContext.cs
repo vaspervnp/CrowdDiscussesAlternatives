@@ -1,4 +1,5 @@
 using CDA.Domain.Discussion;
+using CDA.Domain.Evaluation;
 using CDA.Domain.Groups;
 using CDA.Domain.Proposals;
 using CDA.Domain.References;
@@ -43,6 +44,10 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     public DbSet<GroupItem> GroupItems => Set<GroupItem>();
 
     public DbSet<SimilarityReport> SimilarityReports => Set<SimilarityReport>();
+
+    public DbSet<RequirementWeight> RequirementWeights => Set<RequirementWeight>();
+
+    public DbSet<RequirementScore> RequirementScores => Set<RequirementScore>();
 
     public DbSet<Vote> Votes => Set<Vote>();
 

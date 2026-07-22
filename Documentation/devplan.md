@@ -425,8 +425,19 @@ Decisions taken during the work:
 
 **An EF translation failure worth noting.** Chaining two joins whose result selector calls a record constructor does not translate; it has to project to an anonymous shape and map afterwards. The integration tests caught it immediately, but it is the kind of thing that only fails at runtime — another entry in the case for the SQL-touching tests that CI does not run (§2.1).
 
-### Phase 8 — Group evaluation *(≈1 week)*
-Weight × score matrix against requirements, per-user, re-editable, side-by-side comparison of two groups. **Exit:** a user can evaluate and compare alternatives before voting.
+### Phase 8 — Group evaluation ✅ *done 2026-07-22*
+A private weighted evaluation of each alternative against the topic's requirements, and a side-by-side comparison of everything the participant has scored.
+
+**Exit criteria met**, verified in a browser: two alternatives scored against three requirements under one set of weights, separating them 90% to 48% on the requirement weighted most heavily — a distinction a single up-or-down vote hides entirely. 258 tests pass.
+
+**A design decision the source documents leave open, and which decides whether the feature works at all.** The spreadsheet this grew from describes "a weight factor for each requirement" set while evaluating a group, which reads naturally as weights belonging to the evaluation. Implemented that way the comparison is worthless: each alternative would be scored on its own scale, and anyone could reach a preferred conclusion by adjusting the weights to suit it. So **weights are keyed on (user, requirement) and shared across the topic**, while scores are keyed on (user, group, requirement). The comparison is then sound by construction rather than by discipline. The form states that weights carry across the topic, because otherwise changing one would silently rewrite every other evaluation.
+
+Other decisions:
+- **Evaluations are private to whoever recorded them** — no route exposes another participant's. The vote is the public act; publishing the reasoning behind it would turn a private weighing-up into one more thing to be judged on, and discourage honest assessment.
+- **An unweighted requirement defaults to 3, not 0.** A criterion nobody has considered is not the same as one judged irrelevant, and defaulting to zero would silently drop it from every total.
+- **The percentage is reported alongside the raw total.** Whether 45 is good depends on how many requirements there are and how heavily they are weighted; dividing by the best achievable under the same weights is what makes two alternatives directly comparable. Null when every weight is zero — nothing matters, so nothing can be scored, and 0% would imply a judgement never made.
+- Both scales are enforced in the domain and again as database check constraints.
+- Requirement ids arriving from the form are filtered against the topic's own, so a foreign requirement is discarded rather than stored.
 
 ### Phase 9 — Search & discovery *(≈1 week)*
 `FULLTEXT` indexes, the AND/OR query parser, search scoping (all comments / one user's comments), results as comments or as proposals, saved "tag" queries such as pros/cons. **Exit:** the tagging/categorization workflow from the docs is usable.

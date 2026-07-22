@@ -1,0 +1,108 @@
+@model CDA.Web.Models.CompareViewModel
+@{
+    ViewData["Title"] = "Compare alternatives";
+    var comparison = Model.Comparison;
+    var evaluated = comparison.Alternatives.Where(a => a.HasBeenEvaluated).ToList();
+}
+
+<p class="mb-1">
+    <a asp-controller="Groups" asp-action="Index" asp-route-topicId="@Model.TopicId"
+       class="text-decoration-none">&larr; Alternative solutions</a>
+</p>
+<h1 class="h3">My comparison</h1>
+
+<p class="text-muted col-lg-9">
+    Every alternative scored against the topic's requirements, under your weights.
+    <strong>Only you can see this.</strong>
+</p>
+
+@if (comparison.Requirements.Count == 0)
+{
+    <p class="text-muted fst-italic">This topic has no requirements to evaluate against.</p>
+}
+else if (evaluated.Count == 0)
+{
+    <p class="text-muted fst-italic">
+        You have not evaluated any alternative yet. Open one and score it against the
+        requirements; the results will line up here.
+    </p>
+}
+else
+{
+    @* Scrolls inside its own container: with many requirements this table is wider than the
+       page, and the page itself must not scroll sideways. *@
+    <div style="overflow-x: auto">
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th style="min-width: 18rem">Requirement</th>
+                    <th class="text-center" style="width: 6rem">Weight</th>
+                    @foreach (var alternative in evaluated)
+                    {
+                        <th style="min-width: 12rem">
+                            <a asp-controller="Groups" asp-action="Details"
+                               asp-route-topicId="@Model.TopicId" asp-route-id="@alternative.GroupId"
+                               class="text-decoration-none">@alternative.Description</a>
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var requirement in comparison.Requirements)
+            {
+                <tr>
+                    <td>@requirement.Text</td>
+                    <td class="text-center text-muted">@requirement.Weight</td>
+                    @foreach (var alternative in evaluated)
+                    {
+                        var score = alternative.ScoreByRequirement.GetValueOrDefault(requirement.RequirementId);
+                        <td class="text-center">
+                            @score
+                            @if (requirement.Weight > 0)
+                            {
+                                <small class="text-muted d-block">@(requirement.Weight * score) pts</small>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+            </tbody>
+            <tfoot>
+                <tr class="table-light">
+                    <th colspan="2" class="text-end">Total</th>
+                    @foreach (var alternative in evaluated)
+                    {
+                        <th class="text-center">
+                            @alternative.Total
+                            @if (alternative.Percentage is { } percent)
+                            {
+                                <small class="d-block fw-normal text-muted">@percent% of the best possible</small>
+                            }
+                        </th>
+                    }
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <p class="text-muted col-lg-9">
+        The percentage divides your total by what a perfect answer would score under the same
+        weights. A raw total on its own is hard to read — whether 34 is good depends on how many
+        requirements there are and how heavily you weighted them.
+    </p>
+}
+
+@if (comparison.Alternatives.Any(a => !a.HasBeenEvaluated))
+{
+    <h2 class="h6 mt-4">Not yet evaluated</h2>
+    <ul>
+    @foreach (var alternative in comparison.Alternatives.Where(a => !a.HasBeenEvaluated))
+    {
+        <li>
+            <a asp-action="Evaluate" asp-route-topicId="@Model.TopicId" asp-route-groupId="@alternative.GroupId">
+                @alternative.Description
+            </a>
+        </li>
+    }
+    </ul>
+}
