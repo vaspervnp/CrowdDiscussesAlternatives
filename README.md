@@ -50,6 +50,10 @@ dotnet test tests/CDA.UnitTests            # no database required
 dotnet test tests/CDA.IntegrationTests     # needs a disposable database
 ```
 
+**CI runs the unit tests only.** The integration tests need a database and are not run on
+GitHub, so please run them locally before merging — they are the only coverage the
+database-dependent code has.
+
 Integration tests truncate every table between test classes, so they need their own database
 and refuse to run against anything whose name does not end in `_Test`:
 

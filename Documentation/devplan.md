@@ -46,7 +46,7 @@ Concrete choices to fill the gaps:
 | Background work | `IHostedService` + an outbox table | Email digests, notification fan-out, counter reconciliation. |
 | Tests | xUnit + `WebApplicationFactory`, integration tests against a throwaway schema on the provided server (see §2.1) | Integration tests must hit real SQL — the ranking/search logic is SQL-heavy. |
 | Local dev | A **provided MariaDB instance** — no Docker, no local server install | The maintainer supplies a connection to an empty database. |
-| CI | GitHub Actions: build → unit tests → format check; integration tests gated on a DB being reachable | See the CI caveat in §2.1. |
+| CI | GitHub Actions: build → unit tests. **Integration tests run locally only** | See §2.1. |
 
 **Provider check (done, 2026-07-22).** NuGet's latest `Pomelo.EntityFrameworkCore.MySql` is **9.0.0**, targeting EF Core 9 — there is no EF Core 10 build. The options were:
 
@@ -123,7 +123,9 @@ Step 2 is a hard guard rather than a convention. Everything else here is reversi
 
 Because there is one shared test schema rather than one per run, database-touching test classes join a single xUnit collection so they do not run concurrently; pure unit tests stay outside it and keep parallelising. Using SQLite or the in-memory provider to sidestep this was rejected: ranking, keyset pagination and `FULLTEXT` search are the SQL-heavy parts most in need of coverage, and none of them behave the same off MariaDB — such tests would pass while the product broke.
 
-**CI caveat:** GitHub Actions service containers run on the hosted runner, not on a developer machine, so they remain a valid option for CI even though local Docker is off the table. Pointing CI at the shared provided database is not recommended — concurrent runs would trample each other's schemas. Decide between (a) a MariaDB service container in CI only, or (b) integration tests that run locally and are skipped in CI when no connection string is present.
+**CI runs no integration tests** (maintainer's decision). GitHub Actions builds and runs the unit tests; anything needing a database runs on a developer machine. Pointing CI at the shared server was never viable — concurrent runs would truncate each other's tables — and a MariaDB service container, though technically available on the hosted runner, was declined.
+
+The trade-off is worth naming plainly: the SQL-heavy parts of this system — vote-count maintenance, keyset pagination, the similarity components query, `FULLTEXT` search — are exactly the parts unit tests cannot cover, and they will have no automated gate. A pull request that breaks them goes green. Until that changes, **running `dotnet test app/tests/CDA.IntegrationTests` locally before merging is a manual step that carries real weight**, not a formality. Revisit once those features exist.
 
 ---
 
@@ -303,8 +305,8 @@ Solution scaffold (4 source projects + 2 test projects), `.gitignore` and user-s
 Decisions taken during the work, beyond the plan above:
 - **Central package management** (`Directory.Packages.props`) with transitive pinning enabled — needed to pin `Microsoft.OpenApi` away from 2.0.0, which ships transitively with ASP.NET Core's OpenAPI package and carries a high-severity advisory. `TreatWarningsAsErrors` turns that advisory into a build failure rather than a warning nobody reads.
 - **`nuget.config` clearing machine-level feeds**, so restore depends on nuget.org alone and not on whichever private feeds a developer happens to have configured.
-- **The transport guard exempts loopback addresses.** CI runs against a throwaway MariaDB container with no CA to verify against, and loopback traffic never reaches a network. The exemption keys on the address alone so it cannot be reached remotely, and is covered by tests asserting that private and look-alike hostnames (`10.0.0.5`, `localhost.attacker.example`) are still rejected.
-- **CI uses a MariaDB service container**, not the shared development server — concurrent runs would truncate each other's tables. This settles the open CI question.
+- **The transport guard exempts loopback addresses**, for a database reached without touching a network — a local MariaDB, or a container with no CA to verify against. The exemption keys on the address alone so it cannot be reached remotely, and is covered by tests asserting that private and look-alike hostnames (`10.0.0.5`, `localhost.attacker.example`) are still rejected.
+- **CI builds and runs unit tests only.** Integration tests stay on developer machines; see §2.1 for what that leaves uncovered.
 
 ### Phase 1 — Identity & users *(≈1 week)*
 Identity setup, register/login (cookie + JWT), profile, field-level visibility, `LastSeenAt` heartbeat. **Exit:** a user can register, log in, edit their profile, and control which fields are public.

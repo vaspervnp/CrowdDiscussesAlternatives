@@ -24,46 +24,22 @@ jobs:
       - name: Build
         run: dotnet build app/CrowdDiscussesAlternatives.slnx --no-restore --configuration Release
 
-      # Unit tests need no database and always run.
+      # Unit tests only. Integration tests need a database and are run locally by the
+      # developer — see the note below and Documentation/devplan.md section 2.1.
       - name: Unit tests
         run: >
           dotnet test app/tests/CDA.UnitTests/CDA.UnitTests.csproj
           --no-build --configuration Release --verbosity normal
 
-  integration:
-    name: Integration test
-    runs-on: ubuntu-latest
-
-    # The shared MariaDB the developers use is deliberately NOT the CI target: concurrent
-    # runs would truncate each other's tables. CI brings up its own throwaway server in a
-    # service container instead — Docker is unavailable on the dev machine, not here.
-    services:
-      mariadb:
-        image: mariadb:11.4
-        env:
-          MARIADB_ROOT_PASSWORD: ci-root-password
-          MARIADB_DATABASE: CrowdDiscussesAlternatives_Test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Integration tests
-        # The container is reached over loopback and has no CA to verify against, which is
-        # the one case the connection guard exempts — nothing crosses a network here. Every
-        # other environment, including the developers' shared database, requires VerifyFull.
-        env:
-          ConnectionStrings__CdaTest: "Server=127.0.0.1;Port=3306;Database=CrowdDiscussesAlternatives_Test;User ID=root;Password=ci-root-password;SslMode=None;"
-        run: >
-          dotnet test app/tests/CDA.IntegrationTests/CDA.IntegrationTests.csproj
-          --configuration Release --verbosity normal
+# Integration tests deliberately do not run here.
+#
+# They need a disposable database. The shared development server is not an option —
+# concurrent runs would truncate each other's tables — and the maintainer has chosen not
+# to run a MariaDB service container in CI either. So they run locally:
+#
+#   dotnet test app/tests/CDA.IntegrationTests
+#
+# The consequence is that the SQL-heavy parts of this codebase — ranking, keyset
+# pagination, full-text search — are only covered on a developer's machine. Nothing stops
+# a pull request that breaks them from going green here. Worth revisiting once those
+# features exist and the suite is large enough for that gap to bite.
