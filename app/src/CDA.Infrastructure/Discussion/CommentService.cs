@@ -158,7 +158,7 @@ public sealed class CommentService(CdaDbContext database, IClock clock)
             database.TopicMembers.Add(new TopicMember(topicId, authorId, TopicRole.Member, now));
         }
 
-        database.Comments.Add(Comment.OnProposal(proposalId, authorId, body, now));
+        database.Comments.Add(Comment.OnProposal(topicId, proposalId, authorId, body, now));
 
         // Kept in step with the comment in the same save: the "most recently discussed"
         // ordering reads this column, and a comment without it would leave the proposal
@@ -220,7 +220,7 @@ public sealed class CommentService(CdaDbContext database, IClock clock)
             database.TopicMembers.Add(new TopicMember(topicId, authorId, TopicRole.Member, now));
         }
 
-        database.Comments.Add(Comment.OnGroup(groupId, authorId, body, now));
+        database.Comments.Add(Comment.OnGroup(topicId, groupId, authorId, body, now));
         group.RecordComment(now);
 
         await database.SaveChangesAsync(cancellationToken);

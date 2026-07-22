@@ -439,8 +439,20 @@ Other decisions:
 - Both scales are enforced in the domain and again as database check constraints.
 - Requirement ids arriving from the form are filtered against the topic's own, so a foreign requirement is discarded rather than stored.
 
-### Phase 9 — Search & discovery *(≈1 week)*
-`FULLTEXT` indexes, the AND/OR query parser, search scoping (all comments / one user's comments), results as comments or as proposals, saved "tag" queries such as pros/cons. **Exit:** the tagging/categorization workflow from the docs is usable.
+### Phase 9 — Search & discovery ✅ *done 2026-07-22*
+An AND/OR/NOT query parser over the `FULLTEXT` index laid down in Phase 3, scoped to a topic and optionally to one author, returning either the matching comments or the proposals they are attached to.
+
+**Exit criteria met**, verified in a browser: three proposals tagged by writing `pros` or `cons` in their comments, then pulled back by searching `pros OR cons` with the results shown as proposals and the matching comments quoted underneath. 295 tests pass.
+
+Decisions taken during the work:
+- **Boolean mode has no AND or OR**, so the whole translation lives in the parser: `a AND b` becomes `+a +b`, `a OR b` becomes `a b`, and `a AND (b OR c)` becomes `+a +(b c)`. Twenty-five unit tests pin the mapping, including precedence — `AND` binds tighter than `OR` — and the exclusion rule, which stays absolute inside an `OR` because boolean mode has no notion of "optionally excluded".
+- **Operator characters typed inside words are stripped, not obeyed.** A stray `+` or `*` from someone's clipboard would otherwise silently change the search or make the expression invalid at the database.
+- **Unindexable words are reported, never dropped silently.** `innodb_ft_min_token_size` is 3 on this server, so one- and two-character words can never match; a search containing them would otherwise return nothing with no explanation. The page names them.
+- **An unterminated quote takes the rest of the line** instead of failing — that is a half-typed phrase, not an error worth refusing.
+- **Results can be returned as proposals rather than comments**, which is what makes marker words work as tags. Combined with the author filter, a participant's own markers act as private labels, and the tag vocabulary is whatever they decide as they go.
+- **Withdrawn comments are excluded from results.** A tombstone stays in the thread for continuity, but it should not resurface in search.
+
+**A denormalisation this needed.** A comment can hang off a topic, a proposal, an alternative or a similarity report, so scoping a search to one topic meant a union of four joins on every query. `Comment.OwningTopicId` is now set once at creation and never changes. The migration backfills it from whichever target each existing comment points at — without that the whole table would carry an empty topic id and search would silently return nothing.
 
 ### Phase 10 — Vote-hiding & closing *(≈0.5 week)*
 `HideVoteCountsUntilClose` enforced in projections, topic closing, read-only archive view, final results. **Exit:** counts cannot leak via the API while a topic is open.

@@ -7,6 +7,7 @@ using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.References;
+using CDA.Infrastructure.Search;
 using CDA.Infrastructure.Similarity;
 using CDA.Infrastructure.Topics;
 using CDA.Infrastructure.Voting;
@@ -74,6 +75,7 @@ public static class DependencyInjection
         services.AddScoped<GroupService>();
         services.AddScoped<GroupVotingService>();
         services.AddScoped<EvaluationService>();
+        services.AddScoped<CommentSearchService>();
 
         return services;
     }

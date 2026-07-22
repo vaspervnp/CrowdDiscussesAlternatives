@@ -407,6 +407,15 @@ def main():
         page.goto(f"{songs}/evaluate")
         shot(page, "evaluate-compare")
 
+        print("tagging proposals with marker words and searching them back")
+        sign_in(page, "chair@example.com")
+        comment_on_proposal(page, opening, "pros: it is the strongest opening we have")
+        comment_on_proposal(page, instrumental, "cons: nobody agrees which instrumental")
+        comment_on_proposal(page, closing, "cons: the longest track drags at the end")
+
+        page.goto(f"{songs}/search?q=pros+OR+cons&mode=Proposals")
+        shot(page, "search-tags")
+
         print("capturing the privacy controls")
         page.goto(f"{BASE}/profiles/me")
         page.fill("#RealName", "A. Chairperson")

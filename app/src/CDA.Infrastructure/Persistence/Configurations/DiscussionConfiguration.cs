@@ -54,6 +54,16 @@ public sealed class CommentConfiguration : IEntityTypeConfiguration<Comment>
         builder.HasIndex(c => new { c.GroupId, c.CreatedAtUtc });
         builder.HasIndex(c => c.AuthorId);
 
+        // Search scopes to one topic and often to one author within it.
+        builder.HasIndex(c => new { c.OwningTopicId, c.AuthorId });
+
+        builder.HasOne<Topic>()
+            .WithMany()
+            .HasForeignKey(c => c.OwningTopicId)
+            // The target-specific cascade already removes these; a second path to the same row
+            // is more than MariaDB will accept.
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<Topic>()
             .WithMany()
             .HasForeignKey(c => c.TopicId)

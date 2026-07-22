@@ -6,6 +6,7 @@ using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Evaluation;
 using CDA.Infrastructure.Groups;
 using CDA.Infrastructure.Proposals;
+using CDA.Infrastructure.Search;
 using CDA.Infrastructure.References;
 using CDA.Infrastructure.Similarity;
 using CDA.Infrastructure.Topics;
@@ -140,6 +141,27 @@ public sealed class CompareViewModel
     public required string TopicSubject { get; init; }
 
     public required Comparison Comparison { get; init; }
+}
+
+public sealed class SearchViewModel
+{
+    public required Guid TopicId { get; init; }
+
+    public required string TopicSubject { get; init; }
+
+    public string? Query { get; init; }
+
+    public required SearchResultMode Mode { get; init; }
+
+    public Guid? AuthorFilter { get; init; }
+
+    public string? AuthorFilterName { get; init; }
+
+    /// <summary>Null until a search has actually been run.</summary>
+    public SearchResults? Results { get; init; }
+
+    /// <summary>Everyone who has said anything in this topic, for the author filter.</summary>
+    public required IReadOnlyDictionary<Guid, string> Contributors { get; init; }
 }
 
 public sealed class TopicListViewModel

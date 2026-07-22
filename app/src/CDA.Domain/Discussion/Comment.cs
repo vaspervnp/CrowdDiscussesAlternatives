@@ -26,29 +26,43 @@ public sealed class Comment
         Body = null!;
     }
 
-    private Comment(Guid authorId, string body, DateTime createdAtUtc)
+    private Comment(Guid owningTopicId, Guid authorId, string body, DateTime createdAtUtc)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(body);
 
         Id = Guid.NewGuid();
+        OwningTopicId = owningTopicId;
         AuthorId = authorId;
         Body = body.Trim();
         CreatedAtUtc = createdAtUtc;
     }
 
     public static Comment OnTopic(Guid topicId, Guid authorId, string body, DateTime createdAtUtc) =>
-        new(authorId, body, createdAtUtc) { TopicId = topicId };
+        new(topicId, authorId, body, createdAtUtc) { TopicId = topicId };
 
-    public static Comment OnProposal(Guid proposalId, Guid authorId, string body, DateTime createdAtUtc) =>
-        new(authorId, body, createdAtUtc) { ProposalId = proposalId };
+    public static Comment OnProposal(
+        Guid owningTopicId, Guid proposalId, Guid authorId, string body, DateTime createdAtUtc) =>
+        new(owningTopicId, authorId, body, createdAtUtc) { ProposalId = proposalId };
 
-    public static Comment OnGroup(Guid groupId, Guid authorId, string body, DateTime createdAtUtc) =>
-        new(authorId, body, createdAtUtc) { GroupId = groupId };
+    public static Comment OnGroup(
+        Guid owningTopicId, Guid groupId, Guid authorId, string body, DateTime createdAtUtc) =>
+        new(owningTopicId, authorId, body, createdAtUtc) { GroupId = groupId };
 
-    public static Comment OnSimilarity(Guid similarityId, Guid authorId, string body, DateTime createdAtUtc) =>
-        new(authorId, body, createdAtUtc) { SimilarityId = similarityId };
+    public static Comment OnSimilarity(
+        Guid owningTopicId, Guid similarityId, Guid authorId, string body, DateTime createdAtUtc) =>
+        new(owningTopicId, authorId, body, createdAtUtc) { SimilarityId = similarityId };
 
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// The topic this comment ultimately belongs to, whatever it is attached to.
+    /// </summary>
+    /// <remarks>
+    /// Denormalised on purpose. A comment can hang off a topic, a proposal, an alternative or a
+    /// similarity report, so scoping a search to one topic would otherwise mean a union of four
+    /// joins on every query. Set once at creation and never changed.
+    /// </remarks>
+    public Guid OwningTopicId { get; private set; }
 
     public Guid AuthorId { get; private set; }
 

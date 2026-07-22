@@ -1,0 +1,164 @@
+@model CDA.Web.Models.SearchViewModel
+@using CDA.Infrastructure.Search
+@{
+    ViewData["Title"] = $"Search — {Model.TopicSubject}";
+}
+
+<p class="mb-1">
+    <a asp-controller="Topics" asp-action="Details" asp-route-id="@Model.TopicId"
+       class="text-decoration-none">&larr; @Model.TopicSubject</a>
+</p>
+<h1>Search the discussion</h1>
+
+<p class="text-muted col-lg-9">
+    Searches everything people have written in this topic. Combine words with <code>AND</code>
+    and <code>OR</code>, group them with brackets, quote a phrase, or exclude a word with a
+    leading minus.
+</p>
+
+<form method="get" class="col-lg-9 mb-4">
+    <div class="row g-2">
+        <div class="col">
+            <input name="q" class="form-control" value="@Model.Query" autofocus
+                   placeholder="e.g. pros OR cons&#160;&#160;·&#160;&#160;toll AND (bus OR tram)&#160;&#160;·&#160;&#160;&quot;congestion charge&quot;" />
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary">Search</button>
+        </div>
+    </div>
+
+    <div class="row g-2 mt-2">
+        <div class="col-auto">
+            <label class="form-label mb-0 small text-muted" for="mode">Show me</label>
+            <select name="mode" id="mode" class="form-select form-select-sm">
+                <option value="@SearchResultMode.Proposals" selected="@(Model.Mode == SearchResultMode.Proposals)">
+                    proposals whose comments match
+                </option>
+                <option value="@SearchResultMode.Comments" selected="@(Model.Mode == SearchResultMode.Comments)">
+                    the matching comments
+                </option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label mb-0 small text-muted" for="author">Written by</label>
+            <select name="author" id="author" class="form-select form-select-sm">
+                <option value="">anyone</option>
+                @foreach (var contributor in Model.Contributors)
+                {
+                    <option value="@contributor.Key" selected="@(Model.AuthorFilter == contributor.Key)">
+                        @contributor.Value
+                    </option>
+                }
+            </select>
+        </div>
+    </div>
+</form>
+
+@if (Model.Results is { } results)
+{
+    @if (results.Error is { } error)
+    {
+        <div class="alert alert-warning col-lg-9">@error</div>
+    }
+
+    @if (results.IgnoredShortTerms.Count > 0)
+    {
+        @* Said out loud rather than left as a silent empty result: the index simply does not
+           contain words this short, and a reader would otherwise conclude nothing matched. *@
+        <div class="alert alert-info col-lg-9">
+            Ignored @string.Join(", ", results.IgnoredShortTerms.Select(t => $"\"{t}\"")) —
+            words shorter than @CDA.Domain.Search.CommentQueryParser.MinimumTermLength characters
+            are not indexed and cannot be searched for.
+        </div>
+    }
+
+    @if (Model.Mode == SearchResultMode.Proposals)
+    {
+        <h2 class="h5">
+            @results.Proposals.Count proposal@(results.Proposals.Count == 1 ? "" : "s")
+            @if (Model.AuthorFilter is not null)
+            {
+                <small class="text-muted fw-normal">commented on by @Model.AuthorFilterName</small>
+            }
+        </h2>
+
+        @if (results.Proposals.Count == 0 && results.Error is null)
+        {
+            <p class="text-muted fst-italic">Nothing matched.</p>
+        }
+
+        <div class="list-group col-lg-9">
+        @foreach (var hit in results.Proposals)
+        {
+            <div class="list-group-item">
+                <a asp-controller="Proposals" asp-action="Details"
+                   asp-route-topicId="@Model.TopicId" asp-route-id="@hit.ProposalId"
+                   class="text-decoration-none">@hit.Text</a>
+                <small class="d-block text-muted">
+                    @hit.AuthorDisplayName &middot;
+                    @hit.MatchingComments matching comment@(hit.MatchingComments == 1 ? "" : "s")
+                </small>
+                @foreach (var excerpt in hit.Excerpts)
+                {
+                    <blockquote class="small text-muted border-start ps-2 mt-2 mb-0">@excerpt</blockquote>
+                }
+            </div>
+        }
+        </div>
+    }
+    else
+    {
+        <h2 class="h5">@results.Comments.Count comment@(results.Comments.Count == 1 ? "" : "s")</h2>
+
+        @if (results.Comments.Count == 0 && results.Error is null)
+        {
+            <p class="text-muted fst-italic">Nothing matched.</p>
+        }
+
+        <div class="list-group col-lg-9">
+        @foreach (var hit in results.Comments)
+        {
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <strong>@hit.AuthorDisplayName</strong>
+                    <small class="text-muted">@hit.CreatedAtUtc.ToString("d MMM yyyy HH:mm") UTC</small>
+                </div>
+                <p class="mb-1" style="white-space: pre-wrap">@hit.Body</p>
+                @if (hit.ProposalId is { } proposalId)
+                {
+                    <small class="text-muted">
+                        on
+                        <a asp-controller="Proposals" asp-action="Details"
+                           asp-route-topicId="@Model.TopicId" asp-route-id="@proposalId">@hit.ProposalText</a>
+                    </small>
+                }
+                else if (hit.GroupId is { } groupId)
+                {
+                    <small class="text-muted">
+                        on
+                        <a asp-controller="Groups" asp-action="Details"
+                           asp-route-topicId="@Model.TopicId" asp-route-id="@groupId">@hit.GroupDescription</a>
+                    </small>
+                }
+                else
+                {
+                    <small class="text-muted">in the topic discussion</small>
+                }
+            </div>
+        }
+        </div>
+    }
+}
+else
+{
+    <div class="col-lg-9 border-top pt-3">
+        <h2 class="h6">Using comments as tags</h2>
+        <p class="text-muted">
+            Because this searches comments and can return the proposals they are attached to, a
+            marker word in a comment works as a label. Write <code>pros</code> or
+            <code>cons</code> in your comments as you read through the pool, then come back here
+            and search for them to pull out everything you marked. Restrict the search to your
+            own comments and the labels are effectively private to you.
+        </p>
+    </div>
+}

@@ -99,6 +99,8 @@
            class="btn btn-primary">See the proposals</a>
         <a asp-controller="Groups" asp-action="Index" asp-route-topicId="@Model.Topic.Id"
            class="btn btn-outline-primary">See the alternative solutions</a>
+        <a asp-controller="Search" asp-action="Index" asp-route-topicId="@Model.Topic.Id"
+           class="btn btn-outline-secondary">Search the discussion</a>
     </p>
 }
 

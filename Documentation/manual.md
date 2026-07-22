@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 8**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 9**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -488,7 +488,55 @@ You can re-evaluate at any time, and a new evaluation replaces the old one.
 
 ---
 
-## 11. Quick reference
+## 11. Searching, and using comments as tags
+
+**Search the discussion** looks through everything written in a topic — the topic thread,
+comments on proposals, comments on alternatives, and justifications on duplicate reports.
+
+### Writing a search
+
+| You type | It finds |
+|---|---|
+| `congestion charging` | comments containing **both** words |
+| `congestion AND charging` | the same thing — adjacent words mean AND |
+| `buses OR trams` | comments containing **either** |
+| `toll AND (buses OR trams)` | brackets group alternatives |
+| `"congestion charge"` | that exact phrase |
+| `charging -london` | contains *charging*, but **not** *london* |
+
+`AND` binds more tightly than `OR`, so `toll AND fee OR charge` reads as
+`(toll AND fee) OR charge`. Use brackets when you mean something else.
+
+> **Words of one or two characters cannot be found.** The index does not contain them. Rather
+> than returning nothing and leaving you guessing, the page lists which words it had to ignore.
+
+### Two ways to see the results
+
+**The matching comments** — what you want when you are looking for a remark you half remember.
+
+**Proposals whose comments match** — what you want when you are using words as labels.
+
+### Using comments as tags
+
+This is the workflow the platform was designed around, and it needs no special feature. As you
+read through a pool of proposals, write a marker word in a comment: `pros`, `cons`, `costed`,
+`needs-evidence` — whatever labels you find useful. Later, search for that word and ask for
+**proposals whose comments match**.
+
+![Proposals pulled back out by the marker words in their comments](images/search-tags.png)
+
+Each result shows the comments that matched, so you can see why it came back.
+
+Two things make this more useful than it first looks:
+
+- **Restrict the search to your own comments** with the *Written by* filter, and your markers
+  become effectively private labels — everyone else's `cons` will not interfere with yours.
+- **You are not limited to a fixed set of tags.** Any word works, decided as you go, without
+  asking anyone to add it.
+
+---
+
+## 12. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -513,6 +561,9 @@ You can re-evaluate at any time, and a new evaluation replaces the old one.
 | Can anyone see how I scored an alternative? | No. Evaluations are private to you — the vote is the public act, the reasoning behind it is not. |
 | I changed a weight and another alternative's total moved. | Weights apply across the whole topic. That is what lets the totals be compared with each other. |
 | What does the percentage mean? | Your total as a share of what a perfect answer would score under your own weights. |
+| My search found nothing and I know the word is there. | If it is one or two characters it is not in the index; the page says which words it ignored. |
+| How do I tag a proposal? | Write a marker word in a comment on it, then search for that word and ask for proposals. Any word works. |
+| Can I keep my tags to myself? | Set *Written by* to your own name — then only your own marker comments are matched. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
 
 ---
@@ -524,7 +575,6 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| Searching comments with AND/OR queries | 9 |
 | The qualitative table of how key factors influence each other | 11 |
 | Email notification, personal messages, file attachments | 12 |
 | A second interface language | 13 |
