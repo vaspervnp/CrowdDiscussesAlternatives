@@ -5,6 +5,7 @@ using CDA.Domain.Topics;
 using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Evaluation;
 using CDA.Infrastructure.Groups;
+using CDA.Infrastructure.Parameters;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.Search;
 using CDA.Infrastructure.References;
@@ -162,6 +163,26 @@ public sealed class SearchViewModel
 
     /// <summary>Everyone who has said anything in this topic, for the author filter.</summary>
     public required IReadOnlyDictionary<Guid, string> Contributors { get; init; }
+}
+
+public sealed class ParameterListViewModel
+{
+    public required Guid TopicId { get; init; }
+
+    public required string TopicSubject { get; init; }
+
+    public required IReadOnlyList<ParameterTableSummary> Tables { get; init; }
+
+    public required bool CanCreate { get; init; }
+}
+
+public sealed class ParameterTableViewModel
+{
+    public required Guid TopicId { get; init; }
+
+    public required string TopicSubject { get; init; }
+
+    public required ParameterTableView Table { get; init; }
 }
 
 public sealed class TopicListViewModel

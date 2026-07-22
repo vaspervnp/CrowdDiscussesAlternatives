@@ -1,6 +1,7 @@
 using CDA.Domain.Discussion;
 using CDA.Domain.Evaluation;
 using CDA.Domain.Groups;
+using CDA.Domain.Parameters;
 using CDA.Domain.Proposals;
 using CDA.Domain.References;
 using CDA.Domain.Similarity;
@@ -48,6 +49,12 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     public DbSet<RequirementWeight> RequirementWeights => Set<RequirementWeight>();
 
     public DbSet<RequirementScore> RequirementScores => Set<RequirementScore>();
+
+    public DbSet<ParameterTable> ParameterTables => Set<ParameterTable>();
+
+    public DbSet<Parameter> Parameters => Set<Parameter>();
+
+    public DbSet<ParameterInfluence> ParameterInfluences => Set<ParameterInfluence>();
 
     public DbSet<Vote> Votes => Set<Vote>();
 

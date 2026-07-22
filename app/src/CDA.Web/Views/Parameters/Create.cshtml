@@ -1,0 +1,43 @@
+@model CDA.Web.Models.ParameterListViewModel
+@using CDA.Domain.Parameters
+@{
+    ViewData["Title"] = "Make a factor table";
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-warning">@error</div>
+}
+
+<p class="mb-1">
+    <a asp-action="Index" asp-route-topicId="@Model.TopicId" class="text-decoration-none">
+        &larr; Factor tables
+    </a>
+</p>
+<h1 class="h3">Make a factor table</h1>
+
+<form method="post" class="col-lg-8">
+    <div class="mb-3">
+        <label class="form-label" for="name">What is this table about?</label>
+        <input name="name" id="name" class="form-control" required
+               maxlength="@ParameterTable.NameMaxLength"
+               placeholder="e.g. How the traffic factors pull against each other" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="factors">The key factors, one per line</label>
+        <textarea name="factors" id="factors" class="form-control" rows="8" required
+                  placeholder="Journey time&#10;Air quality&#10;Cost to residents&#10;Shop takings"></textarea>
+        <div class="form-text">
+            Between 2 and @ParameterTable.MaxParameters factors. The grid is square, so twelve
+            factors already means well over a hundred judgements and a table nobody can read
+            across — deciding which are genuinely key is part of the exercise.
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create the table</button>
+    <a asp-action="Index" asp-route-topicId="@Model.TopicId" class="btn btn-link">Cancel</a>
+    <div class="form-text">
+        It starts private to you. You can share it with the topic whenever you like.
+    </div>
+</form>

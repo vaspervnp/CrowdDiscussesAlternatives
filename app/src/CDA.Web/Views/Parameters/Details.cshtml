@@ -1,0 +1,189 @@
+@model CDA.Web.Models.ParameterTableViewModel
+@using CDA.Domain.Parameters
+@{
+    var table = Model.Table;
+    ViewData["Title"] = table.Name;
+
+    var effects = new[]
+    {
+        InfluenceEffect.StronglyNegative,
+        InfluenceEffect.Negative,
+        InfluenceEffect.None,
+        InfluenceEffect.Positive,
+        InfluenceEffect.StronglyPositive,
+    };
+
+    // Colour reinforces the symbol; it never carries the meaning on its own.
+    string Shade(InfluenceEffect effect) => effect switch
+    {
+        InfluenceEffect.StronglyNegative => "background-color:#f8d7da",
+        InfluenceEffect.Negative => "background-color:#fdeff1",
+        InfluenceEffect.Positive => "background-color:#e8f5ea",
+        InfluenceEffect.StronglyPositive => "background-color:#d1e7dd",
+        _ => "",
+    };
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-warning">@error</div>
+}
+
+<p class="mb-1">
+    <a asp-action="Index" asp-route-topicId="@Model.TopicId" class="text-decoration-none">
+        &larr; Factor tables for @Model.TopicSubject
+    </a>
+</p>
+
+<h1 class="h3">@table.Name</h1>
+<p class="text-muted">
+    by @table.OwnerDisplayName
+    @if (table.IsShared)
+    {
+        <span class="badge bg-info text-dark">shared with the topic</span>
+    }
+    else if (table.IsMine)
+    {
+        <span class="badge bg-secondary">private to you</span>
+    }
+    &middot; updated @table.UpdatedAtUtc.ToString("d MMM yyyy HH:mm") UTC
+</p>
+
+<p class="text-muted col-lg-9">
+    Read a row as <em>"if this factor increases, what happens to…"</em> and the columns as the
+    factors affected. The point is to notice where pushing on something that helps one part of
+    the problem quietly damages another.
+</p>
+
+<p class="text-muted col-lg-9">
+    <strong>@InfluenceEffect.StronglyPositive.Symbol()</strong> strongly helps &middot;
+    <strong>@InfluenceEffect.Positive.Symbol()</strong> helps &middot;
+    <strong>@InfluenceEffect.None.Symbol()</strong> no effect &middot;
+    <strong>@InfluenceEffect.Negative.Symbol()</strong> harms &middot;
+    <strong>@InfluenceEffect.StronglyNegative.Symbol()</strong> strongly harms
+</p>
+
+@if (table.Parameters.Count == 0)
+{
+    <p class="text-muted fst-italic">This table has no factors.</p>
+}
+else if (table.IsMine)
+{
+    <form method="post" asp-action="Save" asp-route-topicId="@Model.TopicId" asp-route-id="@table.Id">
+        @* Scrolls inside its own container: an n-by-n grid is easily wider than the page, and
+           the page itself must never scroll sideways. *@
+        <div style="overflow-x: auto">
+            <table class="table table-bordered align-middle" style="min-width: 40rem">
+                <thead>
+                    <tr>
+                        <th style="min-width: 12rem">An increase in&hellip;</th>
+                        @foreach (var column in table.Parameters)
+                        {
+                            <th class="small" style="min-width: 11rem">&hellip;affects @column.Name</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in table.Parameters)
+                {
+                    <tr>
+                        <th class="small">@row.Name</th>
+                        @foreach (var column in table.Parameters)
+                        {
+                            <td>
+                                @if (row.Id == column.Id)
+                                {
+                                    @* A factor's effect on itself says nothing. *@
+                                    <span class="text-muted">&mdash;</span>
+                                }
+                                else
+                                {
+                                    var cell = table.Influences.GetValueOrDefault((row.Id, column.Id));
+                                    var effect = cell?.Effect ?? InfluenceEffect.None;
+
+                                    <input type="hidden" name="from" value="@row.Id" />
+                                    <input type="hidden" name="to" value="@column.Id" />
+                                    <select name="effects" class="form-select form-select-sm mb-1">
+                                        @foreach (var option in effects)
+                                        {
+                                            <option value="@option" selected="@(option == effect)">
+                                                @option.Symbol() @option.Describe()
+                                            </option>
+                                        }
+                                    </select>
+                                    <input name="notes" class="form-control form-control-sm"
+                                           maxlength="@ParameterInfluence.NoteMaxLength"
+                                           placeholder="why?" value="@cell?.Note" />
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn btn-primary">Save the table</button>
+    </form>
+
+    <form method="post" asp-action="Share" asp-route-topicId="@Model.TopicId" asp-route-id="@table.Id"
+          class="mt-3">
+        @* ToString() is not decorative. Razor treats a boolean-valued attribute as an HTML
+           boolean attribute: true renders value="value" and false omits it altogether, so the
+           form would post the literal string "value" and bind as false either way. *@
+        <input type="hidden" name="shared" value="@((!table.IsShared).ToString())" />
+        <button class="btn btn-outline-secondary btn-sm">
+            @(table.IsShared ? "Stop sharing this table" : "Share this table with the topic")
+        </button>
+        <span class="form-text ms-2">
+            @(table.IsShared
+                ? "Everyone in the topic can read it. It stays yours — nobody else can change it."
+                : "Only you can see it at the moment.")
+        </span>
+    </form>
+}
+else
+{
+    <div style="overflow-x: auto">
+        <table class="table table-bordered align-middle" style="min-width: 40rem">
+            <thead>
+                <tr>
+                    <th style="min-width: 12rem">An increase in&hellip;</th>
+                    @foreach (var column in table.Parameters)
+                    {
+                        <th class="small" style="min-width: 8rem">&hellip;affects @column.Name</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var row in table.Parameters)
+            {
+                <tr>
+                    <th class="small">@row.Name</th>
+                    @foreach (var column in table.Parameters)
+                    {
+                        @if (row.Id == column.Id)
+                        {
+                            <td class="text-center text-muted">&mdash;</td>
+                        }
+                        else
+                        {
+                            var cell = table.Influences.GetValueOrDefault((row.Id, column.Id));
+                            var effect = cell?.Effect ?? InfluenceEffect.None;
+
+                            <td class="text-center" style="@Shade(effect)"
+                                title="@row.Name @effect.Describe() @column.Name">
+                                <strong>@effect.Symbol()</strong>
+                                @if (cell?.Note is { } note)
+                                {
+                                    <small class="d-block text-muted">@note</small>
+                                }
+                            </td>
+                        }
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

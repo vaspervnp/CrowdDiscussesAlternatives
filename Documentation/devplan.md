@@ -457,8 +457,20 @@ Decisions taken during the work:
 ### Phase 10 — Vote-hiding & closing *(≈0.5 week)*
 `HideVoteCountsUntilClose` enforced in projections, topic closing, read-only archive view, final results. **Exit:** counts cannot leak via the API while a topic is open.
 
-### Phase 11 — Parameters table *(≈1 week)*
-Per-user qualitative influence matrix, sharing within the topic, grid UI. **Exit:** the PARAMETERS_TABLE feature is reproduced.
+### Phase 11 — Parameters table ✅ *done 2026-07-22*
+A per-participant qualitative grid of how a problem's key factors push on each other, private until its author shares it with the topic.
+
+**Exit criteria met**, verified in a browser: a four-factor table filled in with directions and notes, then shared — showing where a measure that strongly helps one factor harms two others. 312 tests pass.
+
+Decisions taken during the work:
+- **Five coarse steps, not numbers.** The point is to notice that pushing on one thing helps here and hurts there; a figure would invite arithmetic the underlying guesswork cannot support. The source documents are explicit that this is qualitative.
+- **Meaning is carried by symbols, not colour.** `+ +` through `− −`, with colour as reinforcement only. This table's whole content is "helps" against "harms", and roughly one man in twelve cannot separate red from green — carried in colour alone it would be unreadable for them.
+- **Influence is directed.** "Charging harms shop takings" and "shop takings affect charging" are separate claims held independently; a symmetric grid would lose most of what makes this worth drawing. The diagonal is refused in the domain and again by a check constraint.
+- **Twelve factors maximum.** The grid is square, so twelve already means over a hundred judgements and a table nobody can read across. Deciding which factors are genuinely key is part of the exercise.
+- **A cell set back to "no effect" with no note is deleted rather than stored**, or a filled grid accumulates rows for every empty cell — noise growing with the square of the factor count. A note is kept even at "no effect": "I looked and concluded nothing happens" is worth recording.
+- **Tables are private until shared, and shared means readable, never editable.** A shared table is one participant's reading of the problem offered to the others, not a fact the topic has agreed — so tables are never merged and always carry their author's name. An unshared table answers 404 to everyone else, the same as one that does not exist.
+
+**A bug the service tests could not have caught.** The sharing form wrote `value="@(!table.IsShared)"`. Razor treats a boolean-valued attribute as an *HTML boolean attribute*: `true` renders `value="value"` and `false` omits the attribute entirely, so the form posted the literal string "value" and the flag never changed. Every service-level test passed. It surfaced only when the screenshot script drove the real form and the badge stayed on "private". `ParameterTableFormTests` now exercises the rendered HTML over HTTP, and needed an `https` base address of its own — the authentication cookie is issued `Secure`, so a test client on plain http silently drops it and every request arrives anonymous. Worth remembering: **a form's correctness is not established by testing the service behind it.**
 
 ### Phase 12 — Notifications, messaging, attachments *(≈1.5 weeks)*
 Outbox + background sender (MailKit), per-user notification preferences and digests, personal messages, file attachments on disk behind an authorizing controller (extension allowlist, size cap, no direct static-file exposure). **Exit:** users are informed of activity without polling.

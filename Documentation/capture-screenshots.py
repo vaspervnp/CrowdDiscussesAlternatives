@@ -191,6 +191,35 @@ def evaluate(page, topic_url, group_url, weights, scores):
     page.wait_for_load_state("networkidle")
 
 
+def build_factor_table(page, topic_url, name, factors, cells):
+    """Creates a factor table and fills in its grid.
+
+    `cells` maps (row, column) zero-based positions to (effect, note).
+    """
+    page.goto(f"{topic_url}/factors/new")
+    page.fill("#name", name)
+    page.fill("#factors", chr(10).join(factors))
+    page.click("main form button[type=submit]")
+    page.wait_for_load_state("networkidle")
+
+    table_url = page.url
+    selects = page.query_selector_all("select[name=effects]")
+    notes = page.query_selector_all("input[name=notes]")
+
+    # The grid renders row by row, skipping the diagonal, so a cell's position in the flat
+    # list is its row offset minus the diagonals already passed.
+    size = len(factors)
+    for (row, column), (effect, note) in cells.items():
+        index = row * (size - 1) + (column if column < row else column - 1)
+        selects[index].select_option(effect)
+        if note:
+            notes[index].fill(note)
+
+    page.click("form:has(select[name=effects]) button")
+    page.wait_for_load_state("networkidle")
+    return table_url
+
+
 def reset_database():
     """Start from an empty database so the captures are reproducible."""
     import pymysql
@@ -199,6 +228,7 @@ def reset_database():
     cur = con.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
     for t in ("Comments", "RequirementScores", "RequirementWeights", "Requirements", "Votes",
+              "ParameterInfluences", "Parameters", "ParameterTables",
               "SimilarityReports", "GroupItems",
               "ProposalGroups", "ProposalReferences", "References", "TopicUserReputations",
               "Proposals", "TopicMembers", "Topics", "UserProfiles", "AspNetUserClaims",
@@ -415,6 +445,22 @@ def main():
 
         page.goto(f"{songs}/search?q=pros+OR+cons&mode=Proposals")
         shot(page, "search-tags")
+
+        print("mapping how the factors pull against each other")
+        factors = ["Journey time", "Air quality", "Shop takings", "Cost to the council"]
+        table_url = build_factor_table(page, songs, "How the factors pull against each other", factors, {
+            (0, 1): ("StronglyPositive", "Fewer cars idling"),
+            (0, 2): ("Negative", "Harder to reach the shops"),
+            (0, 3): ("Negative", "Enforcement is not free"),
+            (1, 0): ("None", None),
+            (1, 2): ("Positive", "A pleasanter street brings people back"),
+            (2, 3): ("StronglyPositive", "Business rates go up"),
+            (3, 0): ("Negative", "Budget pressure delays the works"),
+        })
+        page.goto(f"{BASE}{table_url.replace(BASE, '')}")
+        page.click("form[action$='/share'] button")
+        page.wait_for_load_state("networkidle")
+        shot(page, "factor-table")
 
         print("capturing the privacy controls")
         page.goto(f"{BASE}/profiles/me")

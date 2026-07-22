@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 9**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 11**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -536,7 +536,58 @@ Two things make this more useful than it first looks:
 
 ---
 
-## 12. Quick reference
+## 12. Factor tables
+
+Solutions usually fail not because a measure does not work, but because it works while damaging
+something else that mattered. A **factor table** is somewhere to write that down and look at it.
+
+![A factor table, shared with the topic](images/factor-table.png)
+
+You name the handful of factors that really matter in the problem, and the grid asks you, for
+each pair: *if this one increases, what happens to that one?*
+
+| | |
+|---|---|
+| `+ +` | strongly helps |
+| `+` | helps |
+| `·` | no effect |
+| `−` | harms |
+| `− −` | strongly harms |
+
+Every cell takes an optional note, and the notes are usually the most valuable part — the
+judgement matters less than the reason for it.
+
+### It is qualitative on purpose
+
+Five coarse steps, not numbers. The point is to notice that pushing on one thing helps here and
+hurts there; putting figures on it would invite arithmetic that the underlying guesswork cannot
+support.
+
+### The direction matters
+
+*Charging harms shop takings* and *shop takings affect charging* are separate claims, and the
+grid holds both independently. Reading down a column shows everything that affects one factor;
+reading across a row shows everything one factor disturbs. The diagonal is never filled in — a
+factor's effect on itself says nothing.
+
+### Between two and twelve factors
+
+The grid is square, so twelve factors already means over a hundred judgements and a table nobody
+can read across. Deciding which factors are genuinely key is part of the exercise.
+
+### Yours, until you share it
+
+A new table is **private to you**. It is a working sketch of how you think the problem hangs
+together, and half-formed thinking should not be on show before you decide it is worth showing.
+
+**Share this table with the topic** makes it readable by everyone in the topic — readable, not
+editable. It stays yours, carries your name, and is never merged with anyone else's. A shared
+table is one participant's reading of the problem, offered to the others, not a fact the topic
+has agreed.
+
+---
+
+## 13. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -564,6 +615,8 @@ Two things make this more useful than it first looks:
 | My search found nothing and I know the word is there. | If it is one or two characters it is not in the index; the page says which words it ignored. |
 | How do I tag a proposal? | Write a marker word in a comment on it, then search for that word and ask for proposals. Any word works. |
 | Can I keep my tags to myself? | Set *Written by* to your own name — then only your own marker comments are matched. |
+| Can someone edit my factor table? | No. Sharing makes it readable, never editable — it stays your reading of the problem. |
+| Why can I not put numbers in the factor table? | It is a qualitative sketch. Figures would invite arithmetic the underlying guesswork cannot support. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
 
 ---
@@ -575,7 +628,6 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| The qualitative table of how key factors influence each other | 11 |
 | Email notification, personal messages, file attachments | 12 |
 | A second interface language | 13 |
 

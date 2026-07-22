@@ -4,6 +4,7 @@ using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Evaluation;
 using CDA.Infrastructure.Groups;
 using CDA.Infrastructure.Identity;
+using CDA.Infrastructure.Parameters;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.References;
@@ -76,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<GroupVotingService>();
         services.AddScoped<EvaluationService>();
         services.AddScoped<CommentSearchService>();
+        services.AddScoped<ParameterTableService>();
 
         return services;
     }
