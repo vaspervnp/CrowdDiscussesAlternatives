@@ -95,7 +95,7 @@ Both are empty and both default to `utf8mb4` / `utf8mb4_general_ci`, so the per-
 | `VerifyCA` | connects | TLS_AES_256_GCM_SHA384 |
 | **`VerifyFull`** | **connects** | TLS_AES_256_GCM_SHA384 |
 
-`VerifyFull` succeeding means the server presents a certificate that chains to a publicly trusted root *and* matches the hostname `<host>`. That is worth taking: `Required` encrypts but validates nothing, so it stops passive eavesdropping while remaining open to an active machine-in-the-middle; `VerifyFull` closes both. Since the strictest mode works at no cost, **the application uses `SslMode=VerifyFull` everywhere** — there is no reason to configure anything weaker.
+`VerifyFull` succeeding means the server presents a certificate that chains to a publicly trusted root *and* matches the host name it is reached by. That is worth taking: `Required` encrypts but validates nothing, so it stops passive eavesdropping while remaining open to an active machine-in-the-middle; `VerifyFull` closes both. Since the strictest mode works at no cost, **the application uses `SslMode=VerifyFull` everywhere** — there is no reason to configure anything weaker.
 
 The connection string therefore has this shape (password from user secrets / environment, never from a file in the repo):
 
