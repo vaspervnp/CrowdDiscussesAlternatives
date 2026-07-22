@@ -401,7 +401,7 @@ Group trees / nested clustering for detailed solutions, availability calendar, S
 
 ### Still open
 
-1. **Credential hygiene** — the `<user>` account is granted from any host (`<user>@%`) on a publicly reachable server, and its password has been shared in plaintext. Restrict the grant to known source hosts if the hosting allows it, and rotate the password before anything resembling production data exists.
+1. **Credential hygiene** — the database account is granted from any host (`'<user>'@'%'`) on a publicly reachable server, and its password has been shared in plaintext. Restrict the grant to known source hosts if the hosting allows it, and rotate the password before anything resembling production data exists. Host names, user names and schema names are deliberately written as placeholders throughout this document: it describes the shape of the deployment, not its coordinates.
 2. **Public topic write access** — on a Public topic, can any authenticated user post immediately, or do they join first and the facilitator approves? Assumed: join is automatic on first write, no approval.
 3. **Email delivery** — which SMTP provider, and is a sending domain available? Needed by Phase 12, not before.
 
