@@ -308,8 +308,21 @@ Decisions taken during the work, beyond the plan above:
 - **The transport guard exempts loopback addresses**, for a database reached without touching a network — a local MariaDB, or a container with no CA to verify against. The exemption keys on the address alone so it cannot be reached remotely, and is covered by tests asserting that private and look-alike hostnames (`10.0.0.5`, `localhost.attacker.example`) are still rejected.
 - **CI builds and runs unit tests only.** Integration tests stay on developer machines; see §2.1 for what that leaves uncovered.
 
-### Phase 1 — Identity & users *(≈1 week)*
-Identity setup, register/login (cookie + JWT), profile, field-level visibility, `LastSeenAt` heartbeat. **Exit:** a user can register, log in, edit their profile, and control which fields are public.
+### Phase 1 — Identity & users ✅ *done 2026-07-22*
+ASP.NET Core Identity on the MariaDB stores, cookie authentication, registration and sign-in, the `UserProfile` aggregate with per-field visibility, and throttled presence tracking.
+
+**Exit criteria met**, verified in a browser against the real database: an account registers, signs in, edits its profile, and chooses each field's audience; an anonymous request for that profile returns the display name and the one field marked public, and none of the rest. 83 tests pass.
+
+Decisions taken during the work:
+- **The profile is a separate aggregate from the Identity user**, sharing its id. The discussion side of the system can load and render a participant without ever touching a password hash. Registration writes both in one transaction, inside an execution strategy, so a rejected display name cannot leave a sign-in-able account with no profile.
+- **Display name is unique and cannot be hidden.** It appears on everything its owner posts, so a visibility switch for it would be a promise the rest of the system could not keep; and two participants sharing one name could be mistaken for each other mid-discussion.
+- **Every configurable field defaults to Private.** Registering publishes nothing beyond the display name.
+- **A hidden field and an empty field are indistinguishable** in the projected view. Reporting the difference would disclose that hidden data exists.
+- **Password policy is length-only** (12 characters, no composition rules), following NIST SP 800-63B. Demanding a digit and a capital produces `Password1!` and rejects a long passphrase, which is the stronger secret.
+- **Presence writes are throttled** to at most one per user per two minutes via an in-memory marker, and run after the response. A timestamp for "last seen" is not worth a database write on every page view, nor a failed request.
+- **Account confirmation is off** until Phase 12 brings a mail transport. Turn `SignIn.RequireConfirmedAccount` on in that same change — until then, anyone can register under an address they do not control.
+
+Deferred deliberately: **API bearer authentication**. The plan pairs cookies with JWT here, but there are no REST endpoints to protect until Phase 2, and the token scheme is better chosen against real endpoints than speculatively.
 
 ### Phase 2 — Topics & importance ranking *(≈1 week)*
 Topic CRUD, `TopicMember` roles + authorization handlers, the generic **vote engine** (single `Vote` table + transactional counter updates) proven first on topics, topic list sorted by importance. **Exit:** topics can be created, joined and ranked; a user's vote is idempotent and limited to one row.

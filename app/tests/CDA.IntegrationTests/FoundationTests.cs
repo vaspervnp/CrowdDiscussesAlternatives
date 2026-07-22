@@ -13,16 +13,16 @@ public class FoundationTests(DatabaseFixture database) : IAsyncLifetime
 {
     private CdaWebApplicationFactory _factory = null!;
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
+        await database.ResetAsync();
         _factory = new CdaWebApplicationFactory(database);
-        return Task.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         _factory.Dispose();
-        await database.ResetAsync();
+        return Task.CompletedTask;
     }
 
     [Fact]

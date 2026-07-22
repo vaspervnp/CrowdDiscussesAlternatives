@@ -1,6 +1,8 @@
 using System.Net;
 using CDA.Application.Abstractions;
+using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,8 +50,40 @@ public static class DependencyInjection
                     .EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), null)));
 
         services.AddSingleton<IClock, SystemClock>();
+        services.AddMemoryCache();
+        services.AddScoped<PresenceTracker>();
+        services.AddScoped<UserAccountService>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Identity options shared by every host. The cookie and scheme wiring that goes with
+    /// them lives in the web project, since it is ASP.NET Core rather than persistence.
+    /// </summary>
+    /// <remarks>
+    /// Account confirmation is not required to sign in, because there is no mail transport
+    /// until Phase 12. That is a deliberate temporary state: turn
+    /// <c>SignIn.RequireConfirmedAccount</c> on in the same change that introduces email,
+    /// otherwise anyone can register under an address they do not control.
+    /// </remarks>
+    public static void ConfigureIdentity(IdentityOptions options)
+    {
+        options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedAccount = false;
+
+        // Length is the requirement; composition rules are not. Demanding a digit and a
+        // capital pushes people towards "Password1!" and rules out a long passphrase, which
+        // is the stronger secret of the two. This follows NIST SP 800-63B rather than
+        // Identity's defaults.
+        options.Password.RequiredLength = 12;
+        options.Password.RequireDigit = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+
+        options.Lockout.MaxFailedAccessAttempts = 10;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     }
 
     /// <summary>

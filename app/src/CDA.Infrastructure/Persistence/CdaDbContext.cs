@@ -1,14 +1,20 @@
+using CDA.Domain.Users;
+using CDA.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace CDA.Infrastructure.Persistence;
 
 /// <summary>
-/// The application's single EF Core context. Entity configurations are discovered
-/// from this assembly, so each aggregate gets its own IEntityTypeConfiguration
-/// rather than accumulating in OnModelCreating.
+/// The application's single EF Core context. Entity configurations are discovered from this
+/// assembly, so each aggregate gets its own IEntityTypeConfiguration rather than
+/// accumulating in OnModelCreating.
 /// </summary>
-public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options) : DbContext(options)
+public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
+    : IdentityDbContext<CdaUser, CdaRole, Guid>(options)
 {
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

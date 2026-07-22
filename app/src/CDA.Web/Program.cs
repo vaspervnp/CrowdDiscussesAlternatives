@@ -1,5 +1,8 @@
 using CDA.Infrastructure;
+using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
+using CDA.Web.Presence;
+using Microsoft.AspNetCore.Identity;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +23,23 @@ builder.Services.AddProblemDetails(options =>
         context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
 
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services
+    .AddIdentity<CdaUser, CdaRole>(DependencyInjection.ConfigureIdentity)
+    .AddEntityFrameworkStores<CdaDbContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/Login";
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CdaDbContext>("database");
@@ -48,7 +68,12 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+// After authentication, so the signed-in user is known; before the endpoints, so it wraps
+// the whole request and records activity once it completes.
+app.UsePresenceTracking();
 
 app.MapStaticAssets();
 

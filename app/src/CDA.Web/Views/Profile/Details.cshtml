@@ -1,0 +1,60 @@
+@model CDA.Application.Users.UserProfileView
+@{
+    ViewData["Title"] = Model.DisplayName;
+}
+
+@*
+    Every optional field here is null either because the owner hides it from this viewer or
+    because they never filled it in. The template cannot tell the two apart, which is the
+    point — the decision was made in ProfileVisibilityPolicy, not here.
+*@
+
+<h1>
+    @Model.DisplayName
+    @if (Model.IsOnline == true)
+    {
+        <span class="badge bg-success align-middle">online</span>
+    }
+</h1>
+
+<p class="text-muted">Member since @Model.CreatedAtUtc.ToString("d MMMM yyyy")</p>
+
+<dl class="row col-md-8">
+    @if (Model.RealName is not null)
+    {
+        <dt class="col-sm-3">Real name</dt>
+        <dd class="col-sm-9">@Model.RealName</dd>
+    }
+
+    @if (Model.Location is not null)
+    {
+        <dt class="col-sm-3">Location</dt>
+        <dd class="col-sm-9">@Model.Location</dd>
+    }
+
+    @if (Model.Email is not null)
+    {
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">@Model.Email</dd>
+    }
+
+    @if (Model.Website is not null)
+    {
+        <dt class="col-sm-3">Website</dt>
+        @* nofollow/noopener: the URL is user-supplied and unverified. *@
+        <dd class="col-sm-9">
+            <a href="@Model.Website" rel="nofollow noopener noreferrer" target="_blank">@Model.Website</a>
+        </dd>
+    }
+</dl>
+
+@if (Model.Biography is not null)
+{
+    <h2 class="h5">About</h2>
+    <p style="white-space: pre-wrap">@Model.Biography</p>
+}
+
+@if (Model.IsSelf)
+{
+    <a asp-action="Edit" class="btn btn-outline-primary">Edit my profile</a>
+}

@@ -53,9 +53,13 @@ public sealed class DatabaseFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Empties every table. Called between test classes rather than per test, because the
-    /// suite shares one schema and cannot create a fresh one per run.
+    /// Empties every table.
     /// </summary>
+    /// <remarks>
+    /// Called <em>before</em> each test rather than after. Cleaning up afterwards breaks
+    /// down exactly when a test fails part-way through or the process is killed, which is
+    /// when isolation matters most; starting from a known state cannot be skipped.
+    /// </remarks>
     public async Task ResetAsync()
     {
         await using var connection = new MySqlConnection(ConnectionString);
