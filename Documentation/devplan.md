@@ -295,8 +295,16 @@ MVC routes mirror the interface tree from `cda-menu - v7.doc`:
 
 Each phase ends with: migrations applied, API + MVC screens working, integration tests green.
 
-### Phase 0 — Foundation *(≈1 week)*
-Solution scaffold, `.gitignore` + user-secrets wiring for the supplied connection string (§2.1), `CdaDbContext`, first migration applied to the empty database, health check that reports DB connectivity, CI pipeline, `ProblemDetails` + logging (Serilog) + OpenAPI. **Exit:** `dotnet run` yields a running app connected to the provided MariaDB, with the schema created by migrations and no credentials in the repo.
+### Phase 0 — Foundation ✅ *done 2026-07-22*
+Solution scaffold (4 source projects + 2 test projects), `.gitignore` and user-secrets wiring, `CdaDbContext` with the model-wide collation override, an empty `InitialBaseline` migration applied to the live database, a `/health` endpoint reporting database connectivity, `ProblemDetails` for API failures with the MVC error view for pages, Serilog, OpenAPI, and a CI workflow.
+
+**Exit criteria met:** `dotnet run` serves a host connected to the provided MariaDB over `SslMode=VerifyFull`; `__EFMigrationsHistory` records the baseline; `/health` returns `Healthy`; 26 tests pass, 9 of them against the real `_Test` database; no credential appears anywhere in the repository.
+
+Decisions taken during the work, beyond the plan above:
+- **Central package management** (`Directory.Packages.props`) with transitive pinning enabled — needed to pin `Microsoft.OpenApi` away from 2.0.0, which ships transitively with ASP.NET Core's OpenAPI package and carries a high-severity advisory. `TreatWarningsAsErrors` turns that advisory into a build failure rather than a warning nobody reads.
+- **`nuget.config` clearing machine-level feeds**, so restore depends on nuget.org alone and not on whichever private feeds a developer happens to have configured.
+- **The transport guard exempts loopback addresses.** CI runs against a throwaway MariaDB container with no CA to verify against, and loopback traffic never reaches a network. The exemption keys on the address alone so it cannot be reached remotely, and is covered by tests asserting that private and look-alike hostnames (`10.0.0.5`, `localhost.attacker.example`) are still rejected.
+- **CI uses a MariaDB service container**, not the shared development server — concurrent runs would truncate each other's tables. This settles the open CI question.
 
 ### Phase 1 — Identity & users *(≈1 week)*
 Identity setup, register/login (cookie + JWT), profile, field-level visibility, `LastSeenAt` heartbeat. **Exit:** a user can register, log in, edit their profile, and control which fields are public.
@@ -378,10 +386,9 @@ Group trees / nested clustering for detailed solutions, availability calendar, S
 
 ### Still open
 
-1. **CI database strategy** — MariaDB service container in CI, or skip integration tests when no connection string is present (§2.1). Pointing CI at the shared server is not viable: concurrent runs would truncate each other's tables.
-3. **Credential hygiene** — the `<user>` account is granted from any host (`<user>@%`) on a publicly reachable server, and its password has been shared in plaintext. Restrict the grant to known source hosts if the hosting allows it, and rotate the password before anything resembling production data exists.
-4. **Public topic write access** — on a Public topic, can any authenticated user post immediately, or do they join first and the facilitator approves? Assumed: join is automatic on first write, no approval.
-5. **Email delivery** — which SMTP provider, and is a sending domain available? Needed by Phase 12, not before.
+1. **Credential hygiene** — the `<user>` account is granted from any host (`<user>@%`) on a publicly reachable server, and its password has been shared in plaintext. Restrict the grant to known source hosts if the hosting allows it, and rotate the password before anything resembling production data exists.
+2. **Public topic write access** — on a Public topic, can any authenticated user post immediately, or do they join first and the facilitator approves? Assumed: join is automatic on first write, no approval.
+3. **Email delivery** — which SMTP provider, and is a sending domain available? Needed by Phase 12, not before.
 
 ---
 

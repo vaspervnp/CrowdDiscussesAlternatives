@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: Build and unit test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore app/CrowdDiscussesAlternatives.slnx
+
+      - name: Build
+        run: dotnet build app/CrowdDiscussesAlternatives.slnx --no-restore --configuration Release
+
+      # Unit tests need no database and always run.
+      - name: Unit tests
+        run: >
+          dotnet test app/tests/CDA.UnitTests/CDA.UnitTests.csproj
+          --no-build --configuration Release --verbosity normal
+
+  integration:
+    name: Integration test
+    runs-on: ubuntu-latest
+
+    # The shared MariaDB the developers use is deliberately NOT the CI target: concurrent
+    # runs would truncate each other's tables. CI brings up its own throwaway server in a
+    # service container instead — Docker is unavailable on the dev machine, not here.
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root-password
+          MARIADB_DATABASE: CrowdDiscussesAlternatives_Test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Integration tests
+        # The container is reached over loopback and has no CA to verify against, which is
+        # the one case the connection guard exempts — nothing crosses a network here. Every
+        # other environment, including the developers' shared database, requires VerifyFull.
+        env:
+          ConnectionStrings__CdaTest: "Server=127.0.0.1;Port=3306;Database=CrowdDiscussesAlternatives_Test;User ID=root;Password=ci-root-password;SslMode=None;"
+        run: >
+          dotnet test app/tests/CDA.IntegrationTests/CDA.IntegrationTests.csproj
+          --configuration Release --verbosity normal

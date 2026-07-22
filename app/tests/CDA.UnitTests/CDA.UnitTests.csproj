@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CDA.Domain\CDA.Domain.csproj" />
+    <ProjectReference Include="..\..\src\CDA.Application\CDA.Application.csproj" />
+    <!-- For the connection-string guard, which is a pure function despite living in Infrastructure. -->
+    <ProjectReference Include="..\..\src\CDA.Infrastructure\CDA.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

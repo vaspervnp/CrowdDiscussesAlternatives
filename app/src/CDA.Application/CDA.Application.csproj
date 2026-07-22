@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CDA.Domain\CDA.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

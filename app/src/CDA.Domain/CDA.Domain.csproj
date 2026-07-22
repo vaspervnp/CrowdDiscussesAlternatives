@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The domain deliberately references nothing — no packages, no projects.
+    A package reference appearing here is a signal that the concept belongs in
+    Application or Infrastructure instead.
+  -->
+
+</Project>

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CDA.Application/CDA.Application.csproj" />
+    <Project Path="src/CDA.Domain/CDA.Domain.csproj" />
+    <Project Path="src/CDA.Infrastructure/CDA.Infrastructure.csproj" />
+    <Project Path="src/CDA.Web/CDA.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CDA.IntegrationTests/CDA.IntegrationTests.csproj" />
+    <Project Path="tests/CDA.UnitTests/CDA.UnitTests.csproj" />
+  </Folder>
+</Solution>
