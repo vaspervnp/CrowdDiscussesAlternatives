@@ -101,20 +101,102 @@ public sealed class CommentService(CdaDbContext database, IClock clock)
     }
 
     /// <summary>
+    /// Posts a comment on a proposal.
+    /// </summary>
+    /// <remarks>
+    /// Allowed throughout, including while the proposal is still editable — that is the point
+    /// of the editing window. Voting waits for the wording to settle; discussing it is how the
+    /// author learns what to improve.
+    /// </remarks>
+    public async Task<CommentResult> PostToProposalAsync(
+        Guid topicId,
+        Guid proposalId,
+        Guid authorId,
+        string body,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return CommentResult.Refused("A comment cannot be empty.");
+        }
+
+        if (body.Length > Comment.BodyMaxLength)
+        {
+            return CommentResult.Refused($"A comment is limited to {Comment.BodyMaxLength} characters.");
+        }
+
+        // Scoped to the topic the caller was authorised against.
+        var proposal = await database.Proposals
+            .SingleOrDefaultAsync(p => p.Id == proposalId && p.TopicId == topicId, cancellationToken);
+
+        if (proposal is null)
+        {
+            return CommentResult.Refused("No such proposal.");
+        }
+
+        var topic = await database.Topics
+            .AsNoTracking()
+            .SingleAsync(t => t.Id == topicId, cancellationToken);
+
+        var now = clock.UtcNow;
+
+        if (topic.IsClosedAt(now))
+        {
+            return CommentResult.Refused("This topic has closed.");
+        }
+
+        var isMember = await database.TopicMembers
+            .AnyAsync(m => m.TopicId == topicId && m.UserId == authorId, cancellationToken);
+
+        if (!isMember)
+        {
+            if (topic.Visibility != TopicVisibility.Public)
+            {
+                return CommentResult.Refused("Only members can take part in this topic.");
+            }
+
+            database.TopicMembers.Add(new TopicMember(topicId, authorId, TopicRole.Member, now));
+        }
+
+        database.Comments.Add(Comment.OnProposal(proposalId, authorId, body, now));
+
+        // Kept in step with the comment in the same save: the "most recently discussed"
+        // ordering reads this column, and a comment without it would leave the proposal
+        // sorted as though nothing had been said.
+        proposal.RecordComment(now);
+
+        await database.SaveChangesAsync(cancellationToken);
+
+        return CommentResult.Ok;
+    }
+
+    /// <summary>Reads a proposal's comments, oldest first.</summary>
+    public Task<List<CommentView>> ForProposalAsync(
+        Guid proposalId,
+        TopicViewer viewer,
+        CancellationToken cancellationToken = default) =>
+        ReadAsync(database.Comments.Where(c => c.ProposalId == proposalId), viewer, cancellationToken);
+
+    /// <summary>
     /// Reads a topic's discussion, oldest first.
     /// </summary>
     /// <remarks>
     /// Withdrawn comments are returned as tombstones rather than dropped: replies below them
     /// stop making sense when the remark they answer disappears.
     /// </remarks>
-    public async Task<List<CommentView>> ForTopicAsync(
+    public Task<List<CommentView>> ForTopicAsync(
         Guid topicId,
         TopicViewer viewer,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        ReadAsync(database.Comments.Where(c => c.TopicId == topicId), viewer, cancellationToken);
+
+    private async Task<List<CommentView>> ReadAsync(
+        IQueryable<Comment> comments,
+        TopicViewer viewer,
+        CancellationToken cancellationToken)
     {
-        var rows = await database.Comments
+        var rows = await comments
             .AsNoTracking()
-            .Where(c => c.TopicId == topicId)
             .OrderBy(c => c.CreatedAtUtc)
             .Join(
                 database.UserProfiles.AsNoTracking(),

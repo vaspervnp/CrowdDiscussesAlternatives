@@ -87,6 +87,41 @@ def vote(page, topic_url, value):
     page.wait_for_load_state("networkidle")
 
 
+def add_proposal(page, topic_url, text, editable_days=None):
+    page.goto(f"{topic_url}/proposals")
+    page.fill("form:has(textarea[name=text]) textarea[name=text]", text)
+    if editable_days is not None:
+        page.select_option("#editableForDays", str(editable_days))
+    page.click("form:has(textarea[name=text]) button")
+    page.wait_for_load_state("networkidle")
+
+
+def proposal_urls(page, topic_url):
+    """Newest first, so the order matches the order they were added in reverse."""
+    page.goto(f"{topic_url}/proposals?sort=Newest")
+    links = page.query_selector_all("main .list-group-item a[href*='/proposals/']")
+    return [link.get_attribute("href") for link in links]
+
+
+def lock_proposal(page, proposal_url):
+    page.goto(f"{BASE}{proposal_url}")
+    page.click("form[action$='/lock'] button")
+    page.wait_for_load_state("networkidle")
+
+
+def vote_on_proposal(page, proposal_url, value):
+    page.goto(f"{BASE}{proposal_url}")
+    page.click(f"button[name=value][value='{value}']")
+    page.wait_for_load_state("networkidle")
+
+
+def comment_on_proposal(page, proposal_url, body):
+    page.goto(f"{BASE}{proposal_url}")
+    page.fill("textarea[name=body]", body)
+    page.click("form[action$='/comments'] button")
+    page.wait_for_load_state("networkidle")
+
+
 def reset_database():
     """Start from an empty database so the captures are reproducible."""
     import pymysql
@@ -164,6 +199,47 @@ def main():
         page.click("button[name=phase][value='Proposing']")
         page.wait_for_load_state("networkidle")
         shot(page, "topic-proposing")
+
+        print("building the pool of proposals")
+        add_proposal(page, songs, "Open with the earliest single, in its original mix", 7)
+        add_proposal(page, songs, "Include at least one instrumental track")
+        add_proposal(page, songs, "Close with the longest track rather than a short one")
+
+        # Already registered during the discussion phase above.
+        sign_in(page, "editor@example.com")
+        add_proposal(page, songs, "Leave out anything already on a compilation")
+
+        # Newest first, so index 0 is the proposal added last.
+        urls = proposal_urls(page, songs)
+        compilation, closing, instrumental, opening = urls[0], urls[1], urls[2], urls[3]
+
+        comment_on_proposal(page, instrumental, "Which one, though? There are only two candidates.")
+
+        # Two are finished and open to votes; the opening track is still being worked on.
+        # Only an author can lock their own proposal, and both of these are Chair's.
+        sign_in(page, "chair@example.com")
+        lock_proposal(page, instrumental)
+        lock_proposal(page, closing)
+        vote_on_proposal(page, instrumental, 1)
+        vote_on_proposal(page, closing, -1)
+
+        sign_in(page, "listener@example.com")
+        vote_on_proposal(page, instrumental, 1)
+        vote_on_proposal(page, closing, 1)
+        comment_on_proposal(page, opening, "The original mix is much better than the remaster.")
+
+        print("capturing the proposal pool")
+        sign_in(page, "chair@example.com")
+        page.goto(f"{songs}/proposals")
+        shot(page, "proposals-list")
+
+        print("capturing a proposal still open for improvement")
+        page.goto(f"{BASE}{opening}")
+        shot(page, "proposal-editable")
+
+        print("capturing a proposal that has locked and is being voted on")
+        page.goto(f"{BASE}{instrumental}")
+        shot(page, "proposal-locked")
 
         print("capturing the privacy controls")
         page.goto(f"{BASE}/profiles/me")

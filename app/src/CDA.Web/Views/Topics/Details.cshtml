@@ -92,6 +92,14 @@
     </form>
 }
 
+@if (Model.Topic.Phase == TopicPhase.Proposing || Model.Topic.IsClosed)
+{
+    <p>
+        <a asp-controller="Proposals" asp-action="Index" asp-route-topicId="@Model.Topic.Id"
+           class="btn btn-primary">See the proposals</a>
+    </p>
+}
+
 @* --- Requirements: what an alternative solution has to achieve --- *@
 <section class="border-top pt-4 col-lg-9">
     <h2 class="h5">Requirements</h2>

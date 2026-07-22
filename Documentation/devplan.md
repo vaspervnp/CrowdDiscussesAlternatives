@@ -361,8 +361,21 @@ Decisions taken during the work:
 
 Also fixed: the app was formatting dates in whatever culture the host machine ran, so pages rendered differently on different machines. The culture is pinned to `en-GB` with `el-GR` registered alongside it, ready for Phase 13.
 
-### Phase 4 — Proposals *(≈1.5 weeks)*
-Proposal CRUD with the edit-window/lock lifecycle, author-only editing, vote-blocked-while-unlocked rule, comments on proposals, the three sort modes (score / date / last-commented), keyset pagination, filter by author. **Exit:** the core loop of the platform is usable end to end.
+### Phase 4 — Proposals ✅ *done 2026-07-22*
+The pool of sentence-sized proposals, the editing window that gates voting, comments on proposals, three orderings with keyset paging, and filtering by author.
+
+**Exit criteria met**, verified in a browser: a proposal is added, commented on while still editable, refused a vote in that state, locked by its author, then voted on; the pool orders by support, recency and most-recently-discussed, and filters to one author. 161 tests pass.
+
+Decisions taken during the work:
+- **The vote engine became genuinely generic**, as planned. `VotingService` now holds the algorithm — delta arithmetic, the transaction, the retry, the change-tracker reset — and each target type supplies four small overrides. The concurrency bug fixed in Phase 2 exists in exactly one place; duplicating the algorithm per target would have meant duplicating that fix and eventually forgetting it in one copy.
+- **The editing window has a ceiling** (30 days) and can be shortened but never extended. Without a ceiling an author could park a proposal in the pool indefinitely and keep it permanently beyond a vote; without the one-way rule they could do the same by extending whenever opinion turned against them.
+- **Voting is refused while a proposal is editable; commenting is encouraged.** A vote is a judgement about a specific wording, and the window exists precisely so the wording can still change. This is the platform's own documented rule, and it is enforced in the voting service rather than only in the view.
+- **A locked proposal cannot be reworded at all**, including by its author. The text is what people voted on.
+- **The 500-character limit is the concept, not a storage decision.** The UI says so, and the refusal message tells the author to split rather than trim.
+- **Never-commented proposals sort last** under "recently discussed" — a null would otherwise outrank every live conversation, which is the opposite of what that ordering is for.
+- Each ordering has its own covering index ending in `Id`, so keyset paging has a stable tiebreaker and no page is a filesort.
+
+The proposal id is fetched through its topic everywhere, following the rule established in Phase 3; a test asserts a facilitator cannot edit or lock another topic's proposal by quoting its id.
 
 ### Phase 5 — References *(≈1 week)*
 Reference entity with URL canonicalization + global uniqueness, attach to proposals, two-aspect voting, `TopicUserReputation` maintenance. **Exit:** references are deduplicated and reference reputation is computed.

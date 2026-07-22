@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 3**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 4**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -181,7 +181,72 @@ Phases only ever move forward: *Discussing* → *Proposing* → *Closed*.
 
 ---
 
-## 6. Quick reference
+## 6. Proposals
+
+Once a topic opens for proposals, its **pool** fills up. This is the part of the platform that
+makes it different from a forum.
+
+![The pool of proposals for a topic](images/proposals-list.png)
+
+### One sentence each
+
+A proposal is **roughly one sentence**, capped at 500 characters, and the limit is the point
+rather than a technical restriction. A whole solution written as one block leaves everyone else
+with nothing to do but accept or reject the lot. Broken into pieces, the parts people agree
+with survive into an alternative that fixes the parts they do not.
+
+If an idea will not fit, it is more than one proposal. The platform's own documents give the
+example: rather than *"a toll of one euro should be charged"*, write
+
+1. *A toll fee is suggested.*
+2. *The suggested value of the toll fee is one euro.*
+
+Now someone who supports charging but disputes the amount can back the first and not the
+second, instead of rejecting both — and the level of support for the principle stays visible
+even while the number is still being argued about.
+
+### The editing window
+
+A new proposal is **open for improvement** for a few days — you choose how long, up to a
+month. During that window its author can reword it in response to comments, and **nobody can
+vote on it**.
+
+![A proposal still inside its editing window](images/proposal-editable.png)
+
+That restriction is deliberate. A vote is a judgement about a specific wording; if the wording
+could still change, the vote would end up attached to something its owner never read.
+Commenting, by contrast, is exactly what the window is for — it is how the author finds out
+what to fix.
+
+**Finish editing and open voting** ends the window early. It cannot be undone, and once the
+window closes the text is frozen: from then on it is what people voted on.
+
+The window can be shortened but never extended, so an author who dislikes the way opinion is
+forming cannot keep a proposal permanently out of reach of a vote.
+
+### Voting on proposals
+
+Once locked, a proposal votes like anything else — **Support** (+1), **Neutral** (0),
+**Oppose** (−1), one vote each, changeable, withdrawable.
+
+![A locked proposal being voted on](images/proposal-locked.png)
+
+### Finding your way around the pool
+
+Three orderings, each answering a different question:
+
+| Ordering | Answers |
+|---|---|
+| **Most supported** | What does the crowd actually favour? |
+| **Newest** | What has appeared since I was last here? |
+| **Recently discussed** | Where is the argument happening right now? |
+
+Clicking any author's name filters the pool to their proposals — useful for following someone
+whose thinking you want to track, or for reviewing your own.
+
+---
+
+## 7. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -192,6 +257,9 @@ Phases only ever move forward: *Discussing* → *Proposing* → *Closed*.
 | Who can see my email address? | Nobody, unless you change that field's audience. Everything starts private. |
 | Can I hide my display name? | No. It appears on everything you post, so a switch for it would be a promise the rest of the platform could not keep. |
 | Why did my topic not open for proposals? | It has no requirements yet. Agree at least one first. |
+| Why can I not vote on a proposal? | It is still inside its editing window, so its wording could still change. Comment instead. |
+| Can I fix a typo in my proposal after it locks? | No. The text is what people voted on. Add a corrected proposal instead. |
+| My proposal was rejected as too long. | It is more than one sentence, so it is more than one proposal. Split it. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
 
 ---
@@ -203,7 +271,6 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| Proposals, with an editing window that locks before voting opens | 4 |
 | References with accuracy and importance voting | 5 |
 | Marking two proposals as similar, and filtering duplicates by a threshold you choose | 6 |
 | Grouping proposals into alternative solutions | 7 |

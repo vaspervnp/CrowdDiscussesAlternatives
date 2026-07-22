@@ -1,3 +1,4 @@
+using CDA.Domain.Proposals;
 using CDA.Domain.Topics;
 using CDA.Domain.Voting;
 using Microsoft.EntityFrameworkCore;
@@ -53,7 +54,9 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
 
             // Exactly one target. Extend this when a new votable type is added — the point
             // of the constraint is that a vote can never be orphaned or double-attached.
-            table.HasCheckConstraint("CK_Votes_SingleTarget", "(`TopicId` IS NOT NULL) = 1");
+            table.HasCheckConstraint(
+                "CK_Votes_SingleTarget",
+                "(`TopicId` IS NOT NULL) + (`ProposalId` IS NOT NULL) = 1");
         });
 
         builder.HasKey(v => v.Id);
@@ -66,9 +69,18 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
             .IsUnique()
             .HasDatabaseName("UX_Votes_User_Topic");
 
+        builder.HasIndex(v => new { v.UserId, v.ProposalId })
+            .IsUnique()
+            .HasDatabaseName("UX_Votes_User_Proposal");
+
         builder.HasOne<Topic>()
             .WithMany()
             .HasForeignKey(v => v.TopicId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<Proposal>()
+            .WithMany()
+            .HasForeignKey(v => v.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

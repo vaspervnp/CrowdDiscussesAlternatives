@@ -1,4 +1,5 @@
 using CDA.Domain.Discussion;
+using CDA.Domain.Proposals;
 using CDA.Domain.Topics;
 using CDA.Domain.Users;
 using CDA.Domain.Voting;
@@ -25,6 +26,8 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     public DbSet<Requirement> Requirements => Set<Requirement>();
 
     public DbSet<Comment> Comments => Set<Comment>();
+
+    public DbSet<Proposal> Proposals => Set<Proposal>();
 
     public DbSet<Vote> Votes => Set<Vote>();
 

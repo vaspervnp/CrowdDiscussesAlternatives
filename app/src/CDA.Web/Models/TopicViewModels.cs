@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using CDA.Application.Proposals;
 using CDA.Application.Topics;
 using CDA.Domain.Topics;
 using CDA.Infrastructure.Discussion;
+using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.Topics;
 
 namespace CDA.Web.Models;
@@ -40,6 +42,32 @@ public sealed class TopicDetailsViewModel
     public required bool RequirementsAreEditable { get; init; }
 
     public required bool CanComment { get; init; }
+}
+
+public sealed class ProposalListViewModel
+{
+    public required TopicView Topic { get; init; }
+
+    public required IReadOnlyList<ProposalView> Proposals { get; init; }
+
+    public required ProposalSort Sort { get; init; }
+
+    public Guid? AuthorFilter { get; init; }
+
+    public string? AuthorFilterName { get; init; }
+
+    public string? NextCursor { get; init; }
+
+    public required bool CanAdd { get; init; }
+}
+
+public sealed class ProposalDetailsViewModel
+{
+    public required TopicView Topic { get; init; }
+
+    public required ProposalView Proposal { get; init; }
+
+    public required IReadOnlyList<CommentView> Comments { get; init; }
 }
 
 public sealed class TopicListViewModel

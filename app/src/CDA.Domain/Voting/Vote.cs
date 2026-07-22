@@ -39,6 +39,9 @@ public sealed class Vote
     public static Vote OnTopic(Guid topicId, Guid userId, short value, DateTime castAtUtc) =>
         new(userId, value, castAtUtc) { TopicId = topicId };
 
+    public static Vote OnProposal(Guid proposalId, Guid userId, short value, DateTime castAtUtc) =>
+        new(userId, value, castAtUtc) { ProposalId = proposalId };
+
     public Guid Id { get; private set; }
 
     public Guid UserId { get; private set; }
@@ -58,6 +61,8 @@ public sealed class Vote
 
     // Exactly one target is set. See the remarks on the class.
     public Guid? TopicId { get; private set; }
+
+    public Guid? ProposalId { get; private set; }
 
     public void ChangeTo(short value, DateTime atUtc)
     {

@@ -3,6 +3,7 @@ using CDA.Application.Abstractions;
 using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
+using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.Topics;
 using CDA.Infrastructure.Voting;
 using Microsoft.AspNetCore.Identity;
@@ -60,6 +61,8 @@ public static class DependencyInjection
         services.AddScoped<TopicVotingService>();
         services.AddScoped<RequirementService>();
         services.AddScoped<CommentService>();
+        services.AddScoped<ProposalService>();
+        services.AddScoped<ProposalVotingService>();
 
         return services;
     }

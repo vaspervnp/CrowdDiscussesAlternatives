@@ -39,6 +39,9 @@ public sealed class Comment
     public static Comment OnTopic(Guid topicId, Guid authorId, string body, DateTime createdAtUtc) =>
         new(authorId, body, createdAtUtc) { TopicId = topicId };
 
+    public static Comment OnProposal(Guid proposalId, Guid authorId, string body, DateTime createdAtUtc) =>
+        new(authorId, body, createdAtUtc) { ProposalId = proposalId };
+
     public Guid Id { get; private set; }
 
     public Guid AuthorId { get; private set; }
@@ -63,6 +66,8 @@ public sealed class Comment
 
     // Exactly one target is set. See the remarks on the class.
     public Guid? TopicId { get; private set; }
+
+    public Guid? ProposalId { get; private set; }
 
     public void Edit(string body, DateTime atUtc)
     {
