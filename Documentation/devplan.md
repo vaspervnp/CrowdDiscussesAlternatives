@@ -26,9 +26,9 @@ Non-goals for v1: mobile apps, real-time collaborative editing, automatic (ML) s
 
 ## 2. Technology decisions
 
-Fixed by `Technical Documentation.docx`:
+From `Technical Documentation.docx`:
 
-- **C# / .NET 9**
+- **C# / .NET** — the doc says .NET 9; **the maintainer has chosen .NET 10 (LTS)** instead, since .NET 9 leaves support in May 2026.
 - **MariaDB (latest)**
 - **MVC + REST API**
 
@@ -36,19 +36,35 @@ Concrete choices to fill the gaps:
 
 | Area | Choice | Why |
 |---|---|---|
-| Web framework | ASP.NET Core 9 — MVC controllers + Razor views, plus `[ApiController]` REST controllers in the same host | One auth pipeline, no CORS setup, simplest to run for an open-source demo. Split into separate hosts later if needed. |
-| ORM | EF Core 9 + `Pomelo.EntityFrameworkCore.MySql` 9.x | The de-facto MariaDB/MySQL provider for EF Core. |
+| Web framework | ASP.NET Core 10 — MVC controllers + Razor views, plus `[ApiController]` REST controllers in the same host | One auth pipeline, no CORS setup, simplest to run for an open-source demo. Split into separate hosts later if needed. |
+| ORM | EF Core 10 + `Pomelo.EntityFrameworkCore.MySql` | The de-facto MariaDB/MySQL provider for EF Core. **Verify a release matching EF Core 10 exists before Phase 0** — Pomelo has historically shipped a few months behind each EF Core major. |
 | Schema management | EF Core migrations, applied via a dedicated migration step (never `EnsureCreated`) | Reproducible, reviewable schema history. |
 | Auth | ASP.NET Core Identity (EF stores) — cookie auth for MVC, JWT bearer for `/api/*` | Per-topic roles are *not* Identity roles (see §4.2). |
 | Search | MariaDB `FULLTEXT` indexes in **boolean mode** | Directly supports the required AND/OR comment search without a separate search engine. |
 | Validation | FluentValidation | Keeps DTO rules out of controllers. |
 | Mapping | Explicit mapping methods (no AutoMapper) | Fewer surprises, better for a codebase meant to be read. |
 | Background work | `IHostedService` + an outbox table | Email digests, notification fan-out, counter reconciliation. |
-| Tests | xUnit + Testcontainers (real MariaDB) + `WebApplicationFactory` | Integration tests must hit real SQL — the ranking/search logic is SQL-heavy. |
-| Local dev | `docker compose` (MariaDB + adminer) | One command to a working DB. |
-| CI | GitHub Actions: build → unit tests → integration tests (service container) → format check | |
+| Tests | xUnit + `WebApplicationFactory`, integration tests against a throwaway schema on the provided server (see §2.1) | Integration tests must hit real SQL — the ranking/search logic is SQL-heavy. |
+| Local dev | A **provided MariaDB instance** — no Docker, no local server install | The maintainer supplies a connection to an empty database. |
+| CI | GitHub Actions: build → unit tests → format check; integration tests gated on a DB being reachable | See the CI caveat in §2.1. |
 
-**Open decision:** .NET 9 is an STS release and reaches end-of-support in **May 2026**. Since the code is being written now, strongly consider targeting **.NET 10 (LTS)** instead — the plan below is unchanged either way. Flagged for the maintainer.
+If Pomelo turns out not to have a matching release, the fallback is to stay on the latest EF Core major it does support while keeping the app itself on .NET 10 — EF Core N runs fine on a newer runtime.
+
+### 2.1 Database access and configuration
+
+The database is an **existing, empty MariaDB instance provided by the maintainer**. There is no container to start and no server to install.
+
+**Configuration:**
+- The connection string is **never committed**. `appsettings.json` ships a placeholder only.
+- Local development reads it from **.NET user secrets** (`dotnet user-secrets set "ConnectionStrings:Cda" "..."` on `CDA.Web`), which live outside the repo tree.
+- Deployment/CI reads it from the environment variable `ConnectionStrings__Cda`.
+- `.gitignore` must cover `appsettings.*.Local.json` and any `*.env` from day one, before the first commit that touches configuration.
+
+**Schema ownership:** the app owns the whole database. Migrations are applied explicitly (`dotnet ef database update`, or a `--migrate` startup flag), never automatically on boot in a shared environment.
+
+**Integration tests** cannot use Testcontainers without Docker. Instead each test run creates a uniquely named schema on the same server (`cda_test_{guid}`), applies migrations to it, runs, then drops it. This requires the supplied account to hold `CREATE`/`DROP DATABASE` privileges — **if it does not**, the fallback is a single dedicated `cda_test` schema that is truncated between test classes, at the cost of losing parallel test execution. Confirm the privilege level before Phase 0.
+
+**CI caveat:** GitHub Actions service containers run on the hosted runner, not on a developer machine, so they remain a valid option for CI even though local Docker is off the table. Pointing CI at the shared provided database is not recommended — concurrent runs would trample each other's schemas. Decide between (a) a MariaDB service container in CI only, or (b) integration tests that run locally and are skipped in CI when no connection string is present.
 
 ---
 
@@ -65,7 +81,6 @@ app/
   tests/
     CDA.UnitTests/
     CDA.IntegrationTests/
-docker-compose.yml
 ```
 
 Dependency rule: `Web → Application → Domain`, `Infrastructure → Application/Domain`, wired at composition root. `Domain` references nothing.
@@ -112,7 +127,9 @@ erDiagram
 
 **TopicMember** — `(TopicId, UserId, Role)` where Role ∈ {Facilitator, Member}. Facilitator/initiator rights are **per topic**, not global Identity roles. This is the single most important modelling decision to get right early, because almost every authorization check routes through it.
 
-**Topic** — Subject, description, `ClosesAt`, `Phase` ∈ {Discussing, Proposing, Closed}, `HideVoteCountsUntilClose` flag, denormalized `ScoreSum`/`VoteCount`.
+**Topic** — Subject, description, `ClosesAt`, `Phase` ∈ {Discussing, Proposing, Closed}, `HideVoteCountsUntilClose` flag, `Visibility` ∈ {Public, InviteOnly} chosen by the creator, `DefaultSimilarityThreshold`, denormalized `ScoreSum`/`VoteCount`.
+
+`Visibility` is the gate for reading a topic: `Public` topics are readable by any authenticated user and joinable on request; `InviteOnly` topics are readable only by their `TopicMember` rows, mirroring the Excel version's "the facilitator shares the workbook". Writing always requires membership regardless of visibility. Every list query must filter on visibility — this is the one place where a missed check leaks private discussions, so it belongs in a single reusable query filter rather than being repeated per endpoint.
 
 **Requirement** — `(TopicId, Text, Order)`. Produced by the facilitator from the discuss phase (mirrors the DISCUSS → TOPIC tab flow in the Excel version).
 
@@ -123,7 +140,7 @@ Invariants:
 - **Voting is rejected while unlocked. Commenting is always allowed.**
 - Denormalized `ScoreSum`, `VoteCount`, `CommentCount`, `LastCommentAt` (the last one powers "sort by most recently commented").
 
-**Reference** — `(CanonicalUrl UNIQUE, Description, CreatedByUserId)`. URL is canonicalized (lowercase host, strip default port / trailing slash / `utm_*`) before the uniqueness check. Linked to proposals through `ProposalReference` so **one reference can support several proposals** — this is a deliberate improvement over a strict 1:N reading of the spec, and is what makes global URL uniqueness workable.
+**Reference** — `(TopicId, CanonicalUrl, Description, CreatedByUserId)` with a **unique index on `(TopicId, CanonicalUrl)`** — uniqueness is scoped per topic, so the same source can legitimately be cited in two different discussions and each topic keeps its own description and vote tally for it. URL is canonicalized (lowercase host, strip default port / trailing slash / `utm_*`) before the uniqueness check. Linked to proposals through `ProposalReference` so one reference can support several proposals within its topic; a `CHECK`/domain guard enforces that the proposal and the reference belong to the same topic.
 
 **Vote** — one table, one row per (user, target):
 
@@ -134,13 +151,14 @@ Vote(Id, UserId, Value TINYINT CHECK (Value IN (-1,0,1)),
 - Exactly one target FK set (DB `CHECK` + domain guard).
 - Unique indexes: `(UserId, TopicId)`, `(UserId, ProposalId)`, `(UserId, GroupId)`, `(UserId, SimilarityId)`, `(UserId, ReferenceId, ReferenceAspect)`. MariaDB treats NULLs as distinct, so a single table with partial-looking uniqueness works cleanly.
 - `ReferenceAspect` ∈ {Accuracy, Importance} — a user casts one vote per aspect.
+- **An explicit `0` is a recorded abstention, not the absence of a vote.** It contributes nothing to `ScoreSum` but does increment `VoteCount` and counts as participation, so "50 people considered this, 20 were neutral" is distinguishable from "30 people saw it". Retracting a vote deletes the row; voting 0 does not.
 - Every vote write updates the target's denormalized counters **in the same transaction**. Sorting thousands of proposals by score must never require aggregating the vote table.
 
 **Comment** — same nullable-FK pattern (`ProposalId? / GroupId? / TopicId? / SimilarityId?`), flat (no threading in v1), `Body` with a `FULLTEXT` index.
 
 **Similarity** — `(ProposalAId, ProposalBId, CreatedByUserId, BetterWrittenProposalId, Justification)`, with IDs **normalized so A < B** and a unique index on the pair, preventing duplicate reports. Votable like anything else.
 
-**ProposalGroup** + **GroupItem** — unordered set; unique `(GroupId, ProposalId)`; group is scoped to a topic and all its proposals must belong to that topic. Optional `ImprovesGroupId` marks "this is a variant of that group rather than a wholly new one".
+**ProposalGroup** + **GroupItem** — unordered set; unique `(GroupId, ProposalId)`; group is scoped to a topic and all its proposals must belong to that topic. Optional `ImprovesGroupId` marks "this is a variant of that group rather than a wholly new one". **A group stays editable after creation, but only by its creator** — same rule as proposals. Because votes are already attached to the group, edits shift the meaning of existing votes: record an `EditedAt` and surface "edited after N votes" in the UI, and consider prompting the creator to fork a new group (via `ImprovesGroupId`) once the group has votes.
 
 **GroupEvaluation** / **GroupEvaluationItem** — `(UserId, GroupId)` unique; items are `(RequirementId, Weight, Score)`. Re-evaluation updates in place; previous versions optionally archived for history.
 
@@ -155,7 +173,7 @@ Vote(Id, UserId, Value TINYINT CHECK (Value IN (-1,0,1)),
 These are the parts where a naive implementation will not match the documents.
 
 ### 5.1 Similarity filtering (user-defined threshold)
-The user sets a minimum vote threshold `T`. Similarities with `ScoreSum >= T` are "active". Active similarities form an undirected graph over proposals; take **connected components** (union-find), and for each component display only the **representative** — the proposal marked "better written" most often, tie-broken by highest `ScoreSum`. All hidden members' votes are shown as belonging to the representative in the UI's rollup, and the UI prompts a user voting on one member to vote the same on the others (the docs' "avoidance of vote splitting"). Computed per request, cached per (topic, T).
+Each topic carries a `DefaultSimilarityThreshold` set by its facilitator; a user may override it for their own session, but the topic value is what everyone sees by default. Similarities with `ScoreSum >= T` are "active". Active similarities form an undirected graph over proposals; take **connected components** (union-find), and for each component display only the **representative** — the proposal marked "better written" most often, tie-broken by highest `ScoreSum`. All hidden members' votes are shown as belonging to the representative in the UI's rollup, and the UI prompts a user voting on one member to vote the same on the others (the docs' "avoidance of vote splitting"). Computed per request, cached per (topic, T).
 
 ### 5.2 Reference reputation → default group ordering
 "Show first the groups of the three users whose references are the most voted."
@@ -219,7 +237,7 @@ MVC routes mirror the interface tree from `cda-menu - v7.doc`:
 Each phase ends with: migrations applied, API + MVC screens working, integration tests green.
 
 ### Phase 0 — Foundation *(≈1 week)*
-Solution scaffold, docker-compose MariaDB, `CdaDbContext`, first migration, health check, CI pipeline, `ProblemDetails` + logging (Serilog) + OpenAPI. **Exit:** `docker compose up` then `dotnet run` yields a running app hitting MariaDB.
+Solution scaffold, `.gitignore` + user-secrets wiring for the supplied connection string (§2.1), `CdaDbContext`, first migration applied to the empty database, health check that reports DB connectivity, CI pipeline, `ProblemDetails` + logging (Serilog) + OpenAPI. **Exit:** `dotnet run` yields a running app connected to the provided MariaDB, with the schema created by migrations and no credentials in the repo.
 
 ### Phase 1 — Identity & users *(≈1 week)*
 Identity setup, register/login (cookie + JWT), profile, field-level visibility, `LastSeenAt` heartbeat. **Exit:** a user can register, log in, edit their profile, and control which fields are public.
@@ -279,18 +297,32 @@ Group trees / nested clustering for detailed solutions, availability calendar, S
 
 ---
 
-## 9. Open questions for the maintainer
+## 9. Decisions and remaining questions
 
-1. **Target framework** — .NET 9 (per the doc, EOL May 2026) or .NET 10 LTS?
-2. **Reference uniqueness scope** — global across the platform (assumed here) or unique per topic?
-3. **Topic visibility** — are topics public/open-registration, or invite-only per topic (the Excel version was "the facilitator shares the workbook")?
-4. **Comment threading** — flat (assumed) or one level of replies?
-5. **Vote value 0** — does an explicit 0 differ from "no vote" for ranking and for the participation count? (Assumed: yes, 0 is a recorded abstention.)
-6. **Group membership limits** — can a group be edited after creation, and by whom?
-7. **Similarity threshold default** — a global default, per topic, or purely per user?
+### Resolved by the maintainer
+
+| # | Question | Decision | Where it lands |
+|---|---|---|---|
+| 1 | Target framework | **.NET 10 (LTS)**, not the .NET 9 named in the docs | §2 |
+| 2 | Reference uniqueness scope | **Per topic** — unique `(TopicId, CanonicalUrl)` | §4.2 Reference |
+| 3 | Topic visibility | **Both** — the creator picks Public or InviteOnly per topic | §4.2 Topic |
+| 4 | Comment threading | **Flat**, no replies in v1 | §4.2 Comment |
+| 5 | Vote value 0 | **Distinct from no vote** — a recorded abstention | §4.2 Vote |
+| 6 | Group editing | **Editable, creator only** | §4.2 ProposalGroup |
+| 7 | Similarity threshold | **Per topic** default, user-overridable for their own view | §4.2 Topic, §5.1 |
+
+`Technical Documentation.docx` still names .NET 9 and should be updated to match decision 1, so the two documents do not contradict each other.
+
+### Still open
+
+1. **Database privileges** — does the supplied account have `CREATE`/`DROP DATABASE`? This decides whether integration tests get an isolated schema per run or a single shared test schema (§2.1).
+2. **CI database strategy** — MariaDB service container in CI, or skip integration tests when no connection string is present (§2.1).
+3. **Pomelo availability** for EF Core 10 (§2).
+4. **Public topic write access** — on a Public topic, can any authenticated user post immediately, or do they join first and the facilitator approves? Assumed: join is automatic on first write, no approval.
+5. **Email delivery** — which SMTP provider, and is a sending domain available? Needed by Phase 12, not before.
 
 ---
 
 ## 10. Definition of done (v1)
 
-A facilitator can open a topic, run a requirements discussion, and close it with an agreed list. Members can add sentence-sized proposals with deduplicated references, comment on and vote for them once locked, mark and vote on similarities, and filter duplicates at a threshold of their choosing. Any member can assemble groups of proposals into alternative solutions, evaluate them against the requirements with personal weights, comment on and vote for them. The whole topic is searchable with AND/OR queries over comments. Vote counts can be hidden until the topic closes. The interface is fully localizable. Everything is reachable through both the MVC UI and the REST API, and covered by integration tests running against a real MariaDB instance.
+A facilitator can open a topic, run a requirements discussion, and close it with an agreed list. Members can add sentence-sized proposals with deduplicated references, comment on and vote for them once locked, mark and vote on similarities, and filter duplicates at a threshold of their choosing. Any member can assemble groups of proposals into alternative solutions, evaluate them against the requirements with personal weights, comment on and vote for them. The whole topic is searchable with AND/OR queries over comments. Vote counts can be hidden until the topic closes. The interface is fully localizable. Everything is reachable through both the MVC UI and the REST API, and covered by integration tests running against a real MariaDB instance. No credential ever appears in the repository.
