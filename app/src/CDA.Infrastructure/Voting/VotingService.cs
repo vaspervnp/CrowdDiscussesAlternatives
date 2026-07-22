@@ -64,73 +64,74 @@ public sealed record VotableSnapshot(int ScoreSum, int VoteCount, VoteOutcome? R
 /// would mean duplicating that fix, and forgetting it in one of the copies.
 /// </para>
 /// </remarks>
-public abstract class VotingService(CdaDbContext database, IClock clock)
+public abstract class VotingService<TTarget>(CdaDbContext database, IClock clock)
+    where TTarget : notnull
 {
     protected CdaDbContext Database { get; } = database;
 
     protected IClock Clock { get; } = clock;
 
     /// <summary>Reads the target's current tallies and whether it is accepting votes.</summary>
-    protected abstract Task<VotableSnapshot?> LoadAsync(Guid targetId, CancellationToken cancellationToken);
+    protected abstract Task<VotableSnapshot?> LoadAsync(TTarget target, CancellationToken cancellationToken);
 
     /// <summary>Finds this user's existing vote on the target, if any.</summary>
-    protected abstract Task<Vote?> FindVoteAsync(Guid targetId, Guid userId, CancellationToken cancellationToken);
+    protected abstract Task<Vote?> FindVoteAsync(TTarget target, Guid userId, CancellationToken cancellationToken);
 
-    protected abstract Vote NewVote(Guid targetId, Guid userId, short value, DateTime atUtc);
+    protected abstract Vote NewVote(TTarget target, Guid userId, short value, DateTime atUtc);
 
     /// <summary>Applies the tally change with a relative update and returns the new figures.</summary>
     protected abstract Task<(int ScoreSum, int VoteCount)> AdjustTalliesAsync(
-        Guid targetId, int scoreDelta, int countDelta, CancellationToken cancellationToken);
+        TTarget target, int scoreDelta, int countDelta, CancellationToken cancellationToken);
 
     public Task<VoteResult> CastAsync(
-        Guid targetId,
+        TTarget target,
         Guid userId,
         short value,
         CancellationToken cancellationToken = default) =>
-        InTransactionAsync(() => CastCoreAsync(targetId, userId, value, cancellationToken), cancellationToken);
+        InTransactionAsync(() => CastCoreAsync(target, userId, value, cancellationToken), cancellationToken);
 
     public Task<VoteResult> WithdrawAsync(
-        Guid targetId,
+        TTarget target,
         Guid userId,
         CancellationToken cancellationToken = default) =>
-        InTransactionAsync(() => WithdrawCoreAsync(targetId, userId, cancellationToken), cancellationToken);
+        InTransactionAsync(() => WithdrawCoreAsync(target, userId, cancellationToken), cancellationToken);
 
     private async Task<VoteResult> CastCoreAsync(
-        Guid targetId,
+        TTarget target,
         Guid userId,
         short value,
         CancellationToken cancellationToken)
     {
-        var target = await LoadAsync(targetId, cancellationToken);
+        var snapshot = await LoadAsync(target, cancellationToken);
 
-        if (target is null)
+        if (snapshot is null)
         {
             return new VoteResult(VoteOutcome.NotFound, 0, 0, null);
         }
 
         // Checked here as well as in the access policy: whether something accepts votes is the
         // one rule that must not depend on the caller remembering to ask.
-        if (target.Refusal is { } refusal)
+        if (snapshot.Refusal is { } refusal)
         {
-            return new VoteResult(refusal, target.ScoreSum, target.VoteCount, null);
+            return new VoteResult(refusal, snapshot.ScoreSum, snapshot.VoteCount, null);
         }
 
-        var existing = await FindVoteAsync(targetId, userId, cancellationToken);
+        var existing = await FindVoteAsync(target, userId, cancellationToken);
 
         if (existing is not null && existing.Value == value)
         {
-            return new VoteResult(VoteOutcome.Unchanged, target.ScoreSum, target.VoteCount, value);
+            return new VoteResult(VoteOutcome.Unchanged, snapshot.ScoreSum, snapshot.VoteCount, value);
         }
 
         var scoreDelta = value - (existing?.Value ?? 0);
         var countDelta = existing is null ? 1 : 0;
         var outcome = existing is null ? VoteOutcome.Recorded : VoteOutcome.Changed;
 
-        var (score, count) = await AdjustTalliesAsync(targetId, scoreDelta, countDelta, cancellationToken);
+        var (score, count) = await AdjustTalliesAsync(target, scoreDelta, countDelta, cancellationToken);
 
         if (existing is null)
         {
-            Database.Votes.Add(NewVote(targetId, userId, value, Clock.UtcNow));
+            Database.Votes.Add(NewVote(target, userId, value, Clock.UtcNow));
         }
         else
         {
@@ -143,30 +144,30 @@ public abstract class VotingService(CdaDbContext database, IClock clock)
     }
 
     private async Task<VoteResult> WithdrawCoreAsync(
-        Guid targetId,
+        TTarget target,
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var target = await LoadAsync(targetId, cancellationToken);
+        var snapshot = await LoadAsync(target, cancellationToken);
 
-        if (target is null)
+        if (snapshot is null)
         {
             return new VoteResult(VoteOutcome.NotFound, 0, 0, null);
         }
 
-        if (target.Refusal is { } refusal)
+        if (snapshot.Refusal is { } refusal)
         {
-            return new VoteResult(refusal, target.ScoreSum, target.VoteCount, null);
+            return new VoteResult(refusal, snapshot.ScoreSum, snapshot.VoteCount, null);
         }
 
-        var existing = await FindVoteAsync(targetId, userId, cancellationToken);
+        var existing = await FindVoteAsync(target, userId, cancellationToken);
 
         if (existing is null)
         {
-            return new VoteResult(VoteOutcome.NothingToWithdraw, target.ScoreSum, target.VoteCount, null);
+            return new VoteResult(VoteOutcome.NothingToWithdraw, snapshot.ScoreSum, snapshot.VoteCount, null);
         }
 
-        var (score, count) = await AdjustTalliesAsync(targetId, -existing.Value, -1, cancellationToken);
+        var (score, count) = await AdjustTalliesAsync(target, -existing.Value, -1, cancellationToken);
 
         Database.Votes.Remove(existing);
         await Database.SaveChangesAsync(cancellationToken);

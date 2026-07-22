@@ -1,3 +1,5 @@
+using CDA.Domain.References;
+
 namespace CDA.Domain.Voting;
 
 /// <summary>
@@ -42,6 +44,14 @@ public sealed class Vote
     public static Vote OnProposal(Guid proposalId, Guid userId, short value, DateTime castAtUtc) =>
         new(userId, value, castAtUtc) { ProposalId = proposalId };
 
+    public static Vote OnReference(
+        Guid referenceId,
+        ReferenceAspect aspect,
+        Guid userId,
+        short value,
+        DateTime castAtUtc) =>
+        new(userId, value, castAtUtc) { ReferenceId = referenceId, ReferenceAspect = aspect };
+
     public Guid Id { get; private set; }
 
     public Guid UserId { get; private set; }
@@ -63,6 +73,14 @@ public sealed class Vote
     public Guid? TopicId { get; private set; }
 
     public Guid? ProposalId { get; private set; }
+
+    public Guid? ReferenceId { get; private set; }
+
+    /// <summary>
+    /// Which question this vote answers. Set only for references, which are judged on two
+    /// independent axes and therefore take two votes per person.
+    /// </summary>
+    public ReferenceAspect? ReferenceAspect { get; private set; }
 
     public void ChangeTo(short value, DateTime atUtc)
     {

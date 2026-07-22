@@ -377,8 +377,21 @@ Decisions taken during the work:
 
 The proposal id is fetched through its topic everywhere, following the rule established in Phase 3; a test asserts a facilitator cannot edit or lock another topic's proposal by quoting its id.
 
-### Phase 5 — References *(≈1 week)*
-Reference entity with URL canonicalization + global uniqueness, attach to proposals, two-aspect voting, `TopicUserReputation` maintenance. **Exit:** references are deduplicated and reference reputation is computed.
+### Phase 5 — References ✅ *done 2026-07-22*
+Sources cited against proposals, deduplicated per topic by canonical URL, rated independently on accuracy and importance, with citer standing maintained transactionally.
+
+**Exit criteria met**, verified in a browser: two sources cited against a proposal, each rated on both axes with opposite profiles — one accurate but irrelevant, one relevant but inaccurate — and a tracking parameter stripped from the stored address. 197 tests pass.
+
+Decisions taken during the work:
+- **The voting algorithm became generic over its target key** (`VotingService<TTarget>`). References are the first thing judged on two axes, so a person holds two votes on one reference; keying the algorithm on `(referenceId, aspect)` was the alternative to duplicating it. Topics and proposals are `VotingService<Guid>` and did not otherwise change.
+- **Accuracy and importance are separate votes, not one score.** A source can be impeccable and beside the point, or squarely relevant and untrustworthy. Collapsing them would erase the distinction that makes a source worth arguing about.
+- **A reference belongs to a topic, not to a proposal**, and is attached through a join table. The same study usually supports several proposals in one discussion; storing it once means it is judged once and the judgement follows it.
+- **URL canonicalisation** strips tracking parameters, fragments, default ports, trailing slashes and host case, and sorts the remaining query. Without it the same source accumulates several entries with the votes split between them, and the ratings stop meaning anything.
+- **`http` and `https` are deliberately not merged.** They are usually the same document, but rewriting someone's `http` citation would break it on a host without TLS, and a dead link is worse than a split rating. Recorded as a test so the choice is not silently reversed.
+- **Citer standing moves in the same transaction as the vote.** It decides whose alternative solutions are listed first in Phase 7, so drift between it and the votes it derives from would distort that ordering with nothing to recompute it.
+- A second check constraint ties the aspect to the target: a topic vote carrying an aspect, or a reference vote without one, are both refused by the database.
+
+**A canonicalisation flaw the tests exposed.** Scheme detection tested for `://`, so `javascript:alert(1)` became `https://javascript:alert(1)` and was refused for being unparseable rather than for having a forbidden scheme — the right outcome by accident, with a message that hid what was actually submitted. Now a scheme is detected properly, with `example.com:8443/x` still recognised as a host and port rather than a scheme.
 
 ### Phase 6 — Similarity *(≈1 week)*
 Similarity reports (normalized pairs), voting, justification comments, the connected-components filter with a user-adjustable threshold, and the "vote the same on similar proposals" prompt. **Exit:** a user can collapse duplicate proposals at a threshold of their choosing.

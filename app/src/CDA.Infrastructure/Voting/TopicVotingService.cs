@@ -7,7 +7,7 @@ namespace CDA.Infrastructure.Voting;
 
 /// <summary>Voting on a topic's importance.</summary>
 public sealed class TopicVotingService(CdaDbContext database, IClock clock)
-    : VotingService(database, clock)
+    : VotingService<Guid>(database, clock)
 {
     protected override async Task<VotableSnapshot?> LoadAsync(
         Guid targetId,
@@ -76,7 +76,7 @@ public sealed class TopicVotingService(CdaDbContext database, IClock clock)
 /// to wording that changes underneath them.
 /// </remarks>
 public sealed class ProposalVotingService(CdaDbContext database, IClock clock)
-    : VotingService(database, clock)
+    : VotingService<Guid>(database, clock)
 {
     protected override async Task<VotableSnapshot?> LoadAsync(
         Guid targetId,

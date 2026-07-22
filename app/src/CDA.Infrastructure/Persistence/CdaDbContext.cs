@@ -1,5 +1,6 @@
 using CDA.Domain.Discussion;
 using CDA.Domain.Proposals;
+using CDA.Domain.References;
 using CDA.Domain.Topics;
 using CDA.Domain.Users;
 using CDA.Domain.Voting;
@@ -28,6 +29,12 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     public DbSet<Comment> Comments => Set<Comment>();
 
     public DbSet<Proposal> Proposals => Set<Proposal>();
+
+    public DbSet<Reference> References => Set<Reference>();
+
+    public DbSet<ProposalReference> ProposalReferences => Set<ProposalReference>();
+
+    public DbSet<TopicUserReputation> TopicUserReputations => Set<TopicUserReputation>();
 
     public DbSet<Vote> Votes => Set<Vote>();
 

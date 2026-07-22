@@ -122,6 +122,24 @@ def comment_on_proposal(page, proposal_url, body):
     page.wait_for_load_state("networkidle")
 
 
+def cite(page, proposal_url, url, description):
+    page.goto(f"{BASE}{proposal_url}")
+    page.fill("input[name=url]", url)
+    page.fill("input[name=description]", description)
+    page.click("form[action$='/references'] button")
+    page.wait_for_load_state("networkidle")
+
+
+def rate(page, proposal_url, reference_index, aspect, value):
+    """Rates the reference at the given position on one of its two axes."""
+    page.goto(f"{BASE}{proposal_url}")
+    forms = page.query_selector_all("form[action$='/vote'][action*='/references/']")
+    # Two forms per reference: accuracy first, then importance.
+    index = reference_index * 2 + (0 if aspect == "Accuracy" else 1)
+    forms[index].query_selector(f"button[value='{value}']").click()
+    page.wait_for_load_state("networkidle")
+
+
 def reset_database():
     """Start from an empty database so the captures are reproducible."""
     import pymysql
@@ -227,6 +245,31 @@ def main():
         vote_on_proposal(page, instrumental, 1)
         vote_on_proposal(page, closing, 1)
         comment_on_proposal(page, opening, "The original mix is much better than the remaster.")
+
+        print("citing sources and rating them")
+        cite(page, instrumental,
+             "https://example.com/liner-notes-1971",
+             "Liner notes from the 1971 pressing, which list the session players")
+        cite(page, instrumental,
+             "example.com/interview?utm_source=newsletter",
+             "1998 interview where the band discuss the instrumental")
+
+        sign_in(page, "editor@example.com")
+        # Accurate but beside the point, and relevant but shaky — the judgement the two
+        # separate axes exist to express.
+        rate(page, instrumental, 0, "Accuracy", 1)
+        rate(page, instrumental, 0, "Importance", -1)
+        rate(page, instrumental, 1, "Accuracy", -1)
+        rate(page, instrumental, 1, "Importance", 1)
+
+        sign_in(page, "listener@example.com")
+        rate(page, instrumental, 0, "Accuracy", 1)
+        rate(page, instrumental, 1, "Importance", 1)
+
+        print("capturing a proposal with rated sources")
+        sign_in(page, "chair@example.com")
+        page.goto(f"{BASE}{instrumental}")
+        shot(page, "proposal-references")
 
         print("capturing the proposal pool")
         sign_in(page, "chair@example.com")

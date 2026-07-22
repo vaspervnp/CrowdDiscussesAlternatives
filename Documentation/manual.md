@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 4**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 5**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -246,7 +246,71 @@ whose thinking you want to track, or for reviewing your own.
 
 ---
 
-## 7. Quick reference
+## 7. Sources
+
+A proposal is worth what the evidence behind it is worth. Any member can cite a source against
+any proposal, and any member can judge it.
+
+![A proposal with two rated sources](images/proposal-references.png)
+
+### Two questions, not one
+
+Every source is rated on two independent axes:
+
+| Question | What a negative answer means |
+|---|---|
+| **Is it accurate?** | The source is unreliable, outdated, or misrepresents what it reports. |
+| **Does it matter here?** | The source may be impeccable, but it does not bear on this topic. |
+
+Keeping them apart is the point. A government statistics release can be entirely accurate and
+completely beside the question being asked; a partisan blog post can be squarely on the point
+and untrustworthy. Collapsing both into one score would hide exactly the distinction that makes
+a source worth arguing about — and in the screenshot above, the two sources have opposite
+profiles for precisely that reason.
+
+You hold **one vote on each axis** per source, so two votes in total, each independently
+changeable.
+
+### One source, one entry
+
+A source is stored **once per topic**. Cite something that has already been cited and the
+existing entry is linked to your proposal instead of a second one being created — the panel
+tells you when a source supports other proposals too.
+
+Addresses are compared after normalisation, so these all count as the same source:
+
+```
+https://example.com/article
+HTTPS://Example.com/Article/
+https://example.com/article?utm_source=newsletter
+https://example.com/article#section-3
+example.com/article
+```
+
+Tracking parameters, trailing slashes, default ports, letter case in the host and `#fragments`
+are all discarded; genuine query parameters are kept and sorted. Without this, the same study
+would accumulate several entries with the ratings split between them, and the ratings would
+stop meaning anything.
+
+`http://` and `https://` are deliberately **not** merged. They are usually the same document,
+but rewriting someone's `http` citation to `https` would break it outright on a host without
+TLS, and a dead link is worse than a split rating.
+
+Only `http` and `https` addresses are accepted.
+
+### Why it is worth citing well
+
+The platform keeps track of how well regarded each participant's sources are within each topic.
+When alternative solutions are listed — a later phase — those proposed by the three
+best-regarded citers appear first.
+
+That advantage is deliberate. The quality of a discussion rests on the quality of what it
+argues from, so the person who does the work of finding good evidence gets a small structural
+say in what gets read.
+
+---
+
+## 8. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -260,6 +324,8 @@ whose thinking you want to track, or for reviewing your own.
 | Why can I not vote on a proposal? | It is still inside its editing window, so its wording could still change. Comment instead. |
 | Can I fix a typo in my proposal after it locks? | No. The text is what people voted on. Add a corrected proposal instead. |
 | My proposal was rejected as too long. | It is more than one sentence, so it is more than one proposal. Split it. |
+| I added a source and it did not appear as new. | Someone had already cited it in this topic, so yours was linked to the existing entry — its rating stays in one place. |
+| Why two sets of vote buttons on a source? | Accuracy and relevance are judged separately; a source can be strong on one and weak on the other. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
 
 ---
@@ -271,7 +337,6 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| References with accuracy and importance voting | 5 |
 | Marking two proposals as similar, and filtering duplicates by a threshold you choose | 6 |
 | Grouping proposals into alternative solutions | 7 |
 | Scoring a group against the requirements with your own weightings | 8 |

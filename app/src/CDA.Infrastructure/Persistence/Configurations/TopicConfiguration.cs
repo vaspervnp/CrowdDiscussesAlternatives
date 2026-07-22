@@ -1,4 +1,5 @@
 using CDA.Domain.Proposals;
+using CDA.Domain.References;
 using CDA.Domain.Topics;
 using CDA.Domain.Voting;
 using Microsoft.EntityFrameworkCore;
@@ -56,7 +57,13 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
             // of the constraint is that a vote can never be orphaned or double-attached.
             table.HasCheckConstraint(
                 "CK_Votes_SingleTarget",
-                "(`TopicId` IS NOT NULL) + (`ProposalId` IS NOT NULL) = 1");
+                "(`TopicId` IS NOT NULL) + (`ProposalId` IS NOT NULL) + (`ReferenceId` IS NOT NULL) = 1");
+
+            // The aspect belongs to references and only to references: a topic vote with an
+            // aspect, or a reference vote without one, would both be meaningless.
+            table.HasCheckConstraint(
+                "CK_Votes_AspectMatchesTarget",
+                "(`ReferenceId` IS NOT NULL) = (`ReferenceAspect` IS NOT NULL)");
         });
 
         builder.HasKey(v => v.Id);
@@ -73,6 +80,11 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
             .IsUnique()
             .HasDatabaseName("UX_Votes_User_Proposal");
 
+        // Two votes per person per reference — one per aspect — so the aspect is part of the key.
+        builder.HasIndex(v => new { v.UserId, v.ReferenceId, v.ReferenceAspect })
+            .IsUnique()
+            .HasDatabaseName("UX_Votes_User_Reference_Aspect");
+
         builder.HasOne<Topic>()
             .WithMany()
             .HasForeignKey(v => v.TopicId)
@@ -81,6 +93,11 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
         builder.HasOne<Proposal>()
             .WithMany()
             .HasForeignKey(v => v.ProposalId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<Reference>()
+            .WithMany()
+            .HasForeignKey(v => v.ReferenceId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

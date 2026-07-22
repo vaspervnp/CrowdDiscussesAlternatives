@@ -4,6 +4,7 @@ using CDA.Application.Topics;
 using CDA.Domain.Topics;
 using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Proposals;
+using CDA.Infrastructure.References;
 using CDA.Infrastructure.Topics;
 
 namespace CDA.Web.Models;
@@ -68,6 +69,10 @@ public sealed class ProposalDetailsViewModel
     public required ProposalView Proposal { get; init; }
 
     public required IReadOnlyList<CommentView> Comments { get; init; }
+
+    public required IReadOnlyList<ReferenceView> References { get; init; }
+
+    public required bool CanCite { get; init; }
 }
 
 public sealed class TopicListViewModel

@@ -1,5 +1,6 @@
 @model CDA.Web.Models.ProposalDetailsViewModel
 @using CDA.Domain.Proposals
+@using CDA.Domain.References
 @{
     ViewData["Title"] = "Proposal";
     var proposal = Model.Proposal;
@@ -104,6 +105,90 @@
             }
         </div>
     </div>
+
+    @* --- Sources: what this proposal is argued from --- *@
+    <h2 class="h5">Sources</h2>
+    <p class="text-muted">
+        Each source is judged on two separate questions, because they come apart: something can
+        be entirely accurate and beside the point, or highly relevant and unreliable.
+    </p>
+
+    @if (Model.References.Count == 0)
+    {
+        <p class="text-muted fst-italic">Nothing cited yet.</p>
+    }
+
+    @foreach (var reference in Model.References)
+    {
+        <div class="border rounded p-3 mb-2">
+            <div>
+                @* User-supplied and unverified, so no ranking credit and no referrer. *@
+                <a href="@reference.Url" rel="nofollow noopener noreferrer" target="_blank">
+                    @reference.Description
+                </a>
+                <div class="small text-muted text-break">@reference.Url</div>
+                <div class="small text-muted">
+                    cited by
+                    <a asp-controller="Profile" asp-action="Details" asp-route-id="@reference.CitedByUserId"
+                       class="text-muted">@reference.CitedByDisplayName</a>
+                    @if (reference.UsedByProposalCount > 1)
+                    {
+                        <span>&middot; also supports @(reference.UsedByProposalCount - 1) other proposal@(reference.UsedByProposalCount == 2 ? "" : "s")</span>
+                    }
+                </div>
+            </div>
+
+            <div class="row mt-2 g-3">
+                @foreach (var aspect in new[] { ReferenceAspect.Accuracy, ReferenceAspect.Importance })
+                {
+                    var score = aspect == ReferenceAspect.Accuracy ? reference.AccuracyScore : reference.ImportanceScore;
+                    var votes = aspect == ReferenceAspect.Accuracy ? reference.AccuracyVotes : reference.ImportanceVotes;
+                    var mine = aspect == ReferenceAspect.Accuracy ? reference.MyAccuracyVote : reference.MyImportanceVote;
+                    var question = aspect == ReferenceAspect.Accuracy
+                        ? "Is it accurate?"
+                        : "Does it matter here?";
+
+                    <div class="col-sm-6">
+                        <div class="small fw-semibold">@question</div>
+                        <div class="small text-muted mb-1">
+                            @(score > 0 ? "+" : "")@score from @votes vote@(votes == 1 ? "" : "s")
+                        </div>
+                        @if (Model.CanCite)
+                        {
+                            <form method="post" asp-action="VoteOnReference" asp-route-topicId="@Model.Topic.Id"
+                                  asp-route-id="@Model.Proposal.Id" asp-route-referenceId="@reference.Id"
+                                  class="d-inline">
+                                <input type="hidden" name="aspect" value="@aspect" />
+                                <button name="value" value="1" class="btn btn-sm @(mine == 1 ? "btn-success" : "btn-outline-success")">&plus;</button>
+                                <button name="value" value="0" class="btn btn-sm @(mine == 0 ? "btn-secondary" : "btn-outline-secondary")">0</button>
+                                <button name="value" value="-1" class="btn btn-sm @(mine == -1 ? "btn-danger" : "btn-outline-danger")">&minus;</button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Model.CanCite)
+    {
+        <form method="post" asp-action="AddReference" asp-route-topicId="@Model.Topic.Id"
+              asp-route-id="@Model.Proposal.Id" class="border-top pt-3 mb-4">
+            <div class="mb-2">
+                <label class="form-label mb-0">Cite a source</label>
+                <input name="url" class="form-control" placeholder="https://" required />
+            </div>
+            <div class="mb-2">
+                <input name="description" class="form-control" required maxlength="500"
+                       placeholder="What is it? e.g. 2024 city council traffic study, pages 12–18" />
+            </div>
+            <button class="btn btn-outline-primary btn-sm">Add source</button>
+            <span class="form-text ms-2">
+                If this source is already cited elsewhere in the topic, it will be linked rather
+                than duplicated — so its rating stays in one place.
+            </span>
+        </form>
+    }
 
     @* The conversation about the proposal, kept structurally apart from the proposal itself. *@
     <h2 class="h5">Comments</h2>

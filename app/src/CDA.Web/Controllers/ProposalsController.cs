@@ -1,9 +1,11 @@
 using CDA.Application.Abstractions;
 using CDA.Application.Topics;
 using CDA.Domain.Proposals;
+using CDA.Domain.References;
 using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Proposals;
+using CDA.Infrastructure.References;
 using CDA.Infrastructure.Topics;
 using CDA.Infrastructure.Voting;
 using CDA.Web.Models;
@@ -21,6 +23,8 @@ public sealed class ProposalsController(
     ProposalService proposals,
     ProposalVotingService voting,
     CommentService comments,
+    ReferenceService references,
+    ReferenceVotingService referenceVoting,
     IClock clock) : Controller
 {
     [HttpGet("")]
@@ -109,7 +113,67 @@ public sealed class ProposalsController(
             Topic = TopicView.Project(topic, viewer, clock.UtcNow),
             Proposal = proposal,
             Comments = await comments.ForProposalAsync(id, viewer, HttpContext.RequestAborted),
+            References = await references.ForProposalAsync(id, viewer.UserId, HttpContext.RequestAborted),
+            CanCite = viewer.IsSignedIn && !topic.IsClosedAt(clock.UtcNow),
         });
+    }
+
+    [HttpPost("{id:guid}/references")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddReference(Guid topicId, Guid id, string url, string description)
+    {
+        var (topic, viewer) = await LoadTopicAsync(topicId);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        var result = await references.AttachAsync(
+            topicId, id, viewer.UserId!.Value, url ?? string.Empty, description ?? string.Empty,
+            HttpContext.RequestAborted);
+
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.Error;
+        }
+
+        return RedirectToAction(nameof(Details), new { topicId, id });
+    }
+
+    [HttpPost("{id:guid}/references/{referenceId:guid}/vote")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VoteOnReference(
+        Guid topicId,
+        Guid id,
+        Guid referenceId,
+        ReferenceAspect aspect,
+        short value)
+    {
+        var (topic, viewer) = await LoadTopicAsync(topicId);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        // The reference id comes from the route, so confirm it belongs to this topic before
+        // letting a vote touch it.
+        var belongs = await database.References.AsNoTracking()
+            .AnyAsync(r => r.Id == referenceId && r.TopicId == topicId, HttpContext.RequestAborted);
+
+        if (!belongs)
+        {
+            return NotFound();
+        }
+
+        await referenceVoting.CastAsync(
+            new ReferenceVoteTarget(referenceId, aspect), viewer.UserId!.Value, value,
+            HttpContext.RequestAborted);
+
+        return RedirectToAction(nameof(Details), new { topicId, id });
     }
 
     [HttpPost("{id:guid}/edit")]
