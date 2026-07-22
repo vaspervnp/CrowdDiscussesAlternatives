@@ -42,21 +42,35 @@ public class TopicAndVoteRulesTests
     {
         // Reopening would resurrect votes cast on the understanding that it had ended.
         var topic = new Topic(Guid.NewGuid(), "Subject", "", Guid.NewGuid(), Now, TopicVisibility.Public);
-        topic.MoveTo(TopicPhase.Proposing);
-        topic.MoveTo(TopicPhase.Closed);
+        topic.OpenForProposals(requirementCount: 1);
+        topic.Close();
 
-        Assert.Throws<InvalidOperationException>(() => topic.MoveTo(TopicPhase.Proposing));
-        Assert.Throws<InvalidOperationException>(() => topic.MoveTo(TopicPhase.Discussing));
+        Assert.Throws<InvalidOperationException>(() => topic.OpenForProposals(requirementCount: 1));
+        Assert.Throws<InvalidOperationException>(() => topic.OpenForProposals(requirementCount: 1));
     }
 
     [Fact]
-    public void Staying_in_the_same_phase_is_allowed()
+    public void A_topic_cannot_open_for_proposals_with_an_empty_requirement_list()
+    {
+        // The list is what alternative solutions get judged against; scoring a group against
+        // nothing is not a meaningful act.
+        var topic = new Topic(Guid.NewGuid(), "Subject", "", Guid.NewGuid(), Now, TopicVisibility.Public);
+
+        Assert.Throws<InvalidOperationException>(() => topic.OpenForProposals(requirementCount: 0));
+        Assert.Equal(TopicPhase.Discussing, topic.Phase);
+    }
+
+    [Fact]
+    public void Opening_for_proposals_freezes_the_requirement_list()
     {
         var topic = new Topic(Guid.NewGuid(), "Subject", "", Guid.NewGuid(), Now, TopicVisibility.Public);
 
-        topic.MoveTo(TopicPhase.Discussing);
+        Assert.True(topic.RequirementsAreEditable);
 
-        Assert.Equal(TopicPhase.Discussing, topic.Phase);
+        topic.OpenForProposals(requirementCount: 3);
+
+        Assert.Equal(TopicPhase.Proposing, topic.Phase);
+        Assert.False(topic.RequirementsAreEditable);
     }
 
     [Fact]
@@ -69,7 +83,7 @@ public class TopicAndVoteRulesTests
         Assert.False(dated.IsClosedAt(Now));
         Assert.True(dated.IsClosedAt(Now.AddDays(2)));
 
-        dated.MoveTo(TopicPhase.Closed);
+        dated.Close();
         Assert.True(dated.IsClosedAt(Now));
     }
 

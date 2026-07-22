@@ -1,5 +1,6 @@
 using System.Net;
 using CDA.Application.Abstractions;
+using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Topics;
@@ -57,6 +58,8 @@ public static class DependencyInjection
         services.AddScoped<UserAccountService>();
         services.AddScoped<TopicService>();
         services.AddScoped<TopicVotingService>();
+        services.AddScoped<RequirementService>();
+        services.AddScoped<CommentService>();
 
         return services;
     }

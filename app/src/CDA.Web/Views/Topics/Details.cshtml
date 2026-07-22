@@ -1,7 +1,7 @@
-@model CDA.Application.Topics.TopicView
+@model CDA.Web.Models.TopicDetailsViewModel
 @using CDA.Domain.Topics
 @{
-    ViewData["Title"] = Model.Subject;
+    ViewData["Title"] = Model.Topic.Subject;
 }
 
 @if (TempData["Error"] is string error)
@@ -9,38 +9,38 @@
     <div class="alert alert-warning">@error</div>
 }
 
-<h1>@Model.Subject</h1>
+<h1>@Model.Topic.Subject</h1>
 
 <p class="text-muted">
-    @Model.Phase
-    @if (Model.Visibility == TopicVisibility.InviteOnly)
+    @Model.Topic.Phase
+    @if (Model.Topic.Visibility == TopicVisibility.InviteOnly)
     {
         <span class="badge bg-secondary">invite only</span>
     }
-    @if (Model.IsClosed)
+    @if (Model.Topic.IsClosed)
     {
         <span class="badge bg-dark">closed</span>
     }
-    @if (Model.ClosesAtUtc is { } closes)
+    @if (Model.Topic.ClosesAtUtc is { } closes)
     {
         <span>&middot; to conclude by @closes.ToString("d MMMM yyyy")</span>
     }
 </p>
 
-@if (!string.IsNullOrWhiteSpace(Model.Description))
+@if (!string.IsNullOrWhiteSpace(Model.Topic.Description))
 {
-    <p class="col-lg-9" style="white-space: pre-wrap">@Model.Description</p>
+    <p class="col-lg-9" style="white-space: pre-wrap">@Model.Topic.Description</p>
 }
 
 <div class="card col-lg-6 my-4">
     <div class="card-body">
         <h2 class="h6 card-title">How important is this topic?</h2>
 
-        @if (Model.ScoreSum is { } score)
+        @if (Model.Topic.ScoreSum is { } score)
         {
             <p class="mb-2">
                 <span class="h4">@(score > 0 ? "+" : "")@score</span>
-                <small class="text-muted">from @Model.VoteCount vote@(Model.VoteCount == 1 ? "" : "s")</small>
+                <small class="text-muted">from @Model.Topic.VoteCount vote@(Model.Topic.VoteCount == 1 ? "" : "s")</small>
             </p>
         }
         else
@@ -51,29 +51,29 @@
             </p>
         }
 
-        @if (Model.CanVote)
+        @if (Model.Topic.CanVote)
         {
-            <form method="post" asp-action="Vote" asp-route-id="@Model.Id" class="d-inline">
+            <form method="post" asp-action="Vote" asp-route-id="@Model.Topic.Id" class="d-inline">
                 @* -1 / 0 / +1 are the only valid votes; 0 is a recorded abstention. *@
-                <button name="value" value="1" class="btn btn-sm @(Model.MyVote == 1 ? "btn-success" : "btn-outline-success")">
+                <button name="value" value="1" class="btn btn-sm @(Model.Topic.MyVote == 1 ? "btn-success" : "btn-outline-success")">
                     Important
                 </button>
-                <button name="value" value="0" class="btn btn-sm @(Model.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">
+                <button name="value" value="0" class="btn btn-sm @(Model.Topic.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">
                     Neutral
                 </button>
-                <button name="value" value="-1" class="btn btn-sm @(Model.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">
+                <button name="value" value="-1" class="btn btn-sm @(Model.Topic.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">
                     Not important
                 </button>
             </form>
 
-            @if (Model.MyVote is not null)
+            @if (Model.Topic.MyVote is not null)
             {
-                <form method="post" asp-action="WithdrawVote" asp-route-id="@Model.Id" class="d-inline">
+                <form method="post" asp-action="WithdrawVote" asp-route-id="@Model.Topic.Id" class="d-inline">
                     <button class="btn btn-sm btn-link text-muted">Withdraw my vote</button>
                 </form>
             }
         }
-        else if (Model.IsClosed)
+        else if (Model.Topic.IsClosed)
         {
             <p class="text-muted mb-0">This topic has closed.</p>
         }
@@ -84,20 +84,149 @@
     </div>
 </div>
 
-@if (Model.CanJoin)
+@if (Model.Topic.CanJoin)
 {
-    <form method="post" asp-action="Join" asp-route-id="@Model.Id" class="mb-3">
+    <form method="post" asp-action="Join" asp-route-id="@Model.Topic.Id" class="mb-3">
         <button class="btn btn-outline-primary">Join this topic</button>
         <span class="form-text ms-2">Members can add proposals and take part in the discussion.</span>
     </form>
 }
 
-@if (Model.CanAdminister && !Model.IsClosed)
+@* --- Requirements: what an alternative solution has to achieve --- *@
+<section class="border-top pt-4 col-lg-9">
+    <h2 class="h5">Requirements</h2>
+    <p class="text-muted">
+        What any solution to this topic must achieve. Agreed here during the discussion, then
+        fixed — groups of proposals are scored against this list later, so it stops changing
+        once the topic opens for proposals.
+    </p>
+
+    @if (Model.Requirements.Count == 0)
+    {
+        <p class="text-muted fst-italic">Nothing agreed yet.</p>
+    }
+    else
+    {
+        <ol class="list-group list-group-numbered mb-3">
+        @foreach (var requirement in Model.Requirements)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+                <span class="me-auto">@requirement.Text</span>
+                @if (Model.Topic.CanAdminister && Model.RequirementsAreEditable)
+                {
+                    <span class="ms-2 text-nowrap">
+                        <form method="post" asp-action="MoveRequirement" asp-route-id="@Model.Topic.Id"
+                              asp-route-requirementId="@requirement.Id" class="d-inline">
+                            <button name="up" value="true" class="btn btn-sm btn-link p-0" title="Move up">&uarr;</button>
+                        </form>
+                        <form method="post" asp-action="MoveRequirement" asp-route-id="@Model.Topic.Id"
+                              asp-route-requirementId="@requirement.Id" class="d-inline">
+                            <button name="up" value="false" class="btn btn-sm btn-link p-0" title="Move down">&darr;</button>
+                        </form>
+                        <form method="post" asp-action="RemoveRequirement" asp-route-id="@Model.Topic.Id"
+                              asp-route-requirementId="@requirement.Id" class="d-inline">
+                            <button class="btn btn-sm btn-link text-danger p-0 ms-2">Remove</button>
+                        </form>
+                    </span>
+                }
+            </li>
+        }
+        </ol>
+    }
+
+    @if (Model.Topic.CanAdminister && Model.RequirementsAreEditable)
+    {
+        <form method="post" asp-action="AddRequirement" asp-route-id="@Model.Topic.Id" class="row g-2">
+            <div class="col">
+                <input name="text" class="form-control" placeholder="A solution must…" maxlength="500" required />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary">Add requirement</button>
+            </div>
+        </form>
+    }
+    else if (Model.Topic.CanAdminister)
+    {
+        <p class="text-muted fst-italic">
+            Settled when this topic opened for proposals. Changing them now would invalidate
+            evaluations already made against them.
+        </p>
+    }
+</section>
+
+@* --- Discussion: the conversation around the topic, kept apart from proposals --- *@
+<section class="border-top pt-4 mt-4 col-lg-9">
+    <h2 class="h5">Discussion</h2>
+    <p class="text-muted">
+        Clarify the subject and work out the requirements here. Proposals come later and stay
+        separate from this conversation.
+    </p>
+
+    @if (Model.Comments.Count == 0)
+    {
+        <p class="text-muted fst-italic">No comments yet.</p>
+    }
+
+    @foreach (var comment in Model.Comments)
+    {
+        <div class="border-bottom py-2">
+            <div class="d-flex justify-content-between">
+                <strong>
+                    <a asp-controller="Profile" asp-action="Details" asp-route-id="@comment.AuthorId"
+                       class="text-decoration-none">@comment.AuthorDisplayName</a>
+                </strong>
+                <small class="text-muted">
+                    @comment.CreatedAtUtc.ToString("d MMM yyyy HH:mm") UTC
+                    @if (comment.EditedAtUtc is not null)
+                    {
+                        <span title="Edited">&middot; edited</span>
+                    }
+                </small>
+            </div>
+
+            @if (comment.IsDeleted)
+            {
+                @* A tombstone, not a removal: replies below stop making sense otherwise. *@
+                <p class="text-muted fst-italic mb-0">This comment was withdrawn.</p>
+            }
+            else
+            {
+                <p class="mb-1" style="white-space: pre-wrap">@comment.Body</p>
+                @if (comment.CanDelete)
+                {
+                    <form method="post" asp-action="DeleteComment" asp-route-id="@Model.Topic.Id"
+                          asp-route-commentId="@comment.Id">
+                        <button class="btn btn-sm btn-link text-muted p-0">Withdraw</button>
+                    </form>
+                }
+            }
+        </div>
+    }
+
+    @if (Model.CanComment)
+    {
+        <form method="post" asp-action="PostComment" asp-route-id="@Model.Topic.Id" class="mt-3">
+            <textarea name="body" class="form-control" rows="3" maxlength="8000" required
+                      placeholder="Add to the discussion…"></textarea>
+            <button class="btn btn-primary mt-2">Post comment</button>
+            @if (!Model.Topic.IsMember)
+            {
+                <span class="form-text ms-2">Posting will add you to this topic.</span>
+            }
+        </form>
+    }
+    else if (User.Identity?.IsAuthenticated != true)
+    {
+        <p><a asp-controller="Account" asp-action="Login">Sign in</a> to take part.</p>
+    }
+</section>
+
+@if (Model.Topic.CanAdminister && !Model.Topic.IsClosed)
 {
-    <div class="border-top pt-3">
+    <div class="border-top pt-3 mt-4">
         <h2 class="h6">Facilitator</h2>
-        <form method="post" asp-action="ChangePhase" asp-route-id="@Model.Id" class="d-inline">
-            @if (Model.Phase == TopicPhase.Discussing)
+        <form method="post" asp-action="ChangePhase" asp-route-id="@Model.Topic.Id" class="d-inline">
+            @if (Model.Topic.Phase == TopicPhase.Discussing)
             {
                 <button name="phase" value="@TopicPhase.Proposing" class="btn btn-sm btn-outline-primary">
                     Open for proposals

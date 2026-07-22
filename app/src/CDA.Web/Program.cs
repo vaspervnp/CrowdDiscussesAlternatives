@@ -2,6 +2,7 @@ using CDA.Infrastructure;
 using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
 using CDA.Web.Presence;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Serilog;
 
@@ -64,6 +65,15 @@ else
     app.UseWhen(context => !IsApiRequest(context), web => web.UseExceptionHandler("/Home/Error"));
     app.UseHsts();
 }
+
+// Without this the app formats dates and numbers in whatever culture the host machine
+// happens to run, so the same page renders differently on a developer's laptop and on the
+// server. Pinned to English for now; Phase 13 makes the culture a user choice and adds the
+// translated strings to go with it.
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("en-GB")
+    .AddSupportedCultures("en-GB", "el-GR")
+    .AddSupportedUICultures("en-GB", "el-GR"));
 
 app.UseHttpsRedirection();
 app.UseRouting();

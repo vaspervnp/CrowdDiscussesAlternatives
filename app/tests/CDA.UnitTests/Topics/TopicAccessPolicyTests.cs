@@ -75,7 +75,7 @@ public class TopicAccessPolicyTests
     public void A_topic_moved_to_closed_accepts_no_votes()
     {
         var topic = Topic();
-        topic.MoveTo(TopicPhase.Closed);
+        topic.Close();
 
         Assert.False(TopicAccessPolicy.CanVote(topic, Member, Now));
     }

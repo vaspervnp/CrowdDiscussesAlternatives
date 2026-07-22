@@ -342,8 +342,23 @@ Decisions taken during the work:
 
 Deferred: optimistic concurrency on topic edits (low contention, single facilitator) and the REST API surface, which arrives with bearer authentication in a later phase.
 
-### Phase 3 — Requirements & discuss phase *(≈0.5 week)*
-Topic-level discussion thread, facilitator publishes the requirement list, `ClosesAt`, phase transitions. **Exit:** the DISCUSS → TOPIC flow from the Excel version works.
+### Phase 3 — Requirements & discuss phase ✅ *done 2026-07-22*
+The topic-level discussion thread, the requirement list the facilitator concludes it with, and the transition that publishes it.
+
+**Exit criteria met**, verified in a browser: opening a topic for proposals with an empty requirement list is refused with the reason; after two requirements are agreed and a comment posted, the same action moves the topic to Proposing, the list renders in order and the add form is replaced by an explanation that it is now settled.
+
+Decisions taken during the work:
+- **A topic cannot open for proposals with no requirements.** The list is what alternative solutions get scored against in Phase 8; scoring a group against nothing is not a meaningful act. The rule lives in `Topic.OpenForProposals(requirementCount)`, so it cannot be bypassed by a different caller.
+- **Requirements freeze when the topic opens for proposals.** Proposals are written against a published list and groups are evaluated against it; changing it afterwards silently invalidates evaluations people have already made.
+- **`MoveTo(phase)` became `OpenForProposals(count)` and `Close()`.** The mechanical setter could not express the precondition; the named operations can.
+- **Comments share one table with votes' polymorphic shape** — nullable target column plus a check constraint requiring exactly one — and carry a **`FULLTEXT` index declared in raw SQL** in the migration, since EF Core has no API for it. An integration test runs a boolean-mode `AND` query against it, so Phase 9 starts from something proven rather than assumed.
+- **Withdrawn comments become tombstones, never deleted rows.** Replies stop making sense when the remark they answer disappears, and the record of how a topic reached its conclusion is part of the point.
+- **Posting to a public topic joins it.** A separate "join" click before speaking carries no decision — anyone who may read a public topic may take part — and leaves engaged people outside the membership list the rest of the platform reasons about. This settles open question 2.
+- **Only the author may edit a comment**, whatever anyone's role. Editing someone else's words would put statements in their name. Facilitators may withdraw, which is moderation rather than authorship.
+
+**Two access-control holes, found while writing the code and closed with regression tests.** Requirement and comment ids travel in the route, and both services originally looked them up by id alone while the authorisation check upstream was against the *topic*. A facilitator of their own topic could therefore pair their topic id with a foreign requirement or comment id and edit, delete or moderate another topic's content. Both lookups are now scoped to the topic the caller was authorised against. The pattern is worth remembering: **whenever authorisation is checked against a parent, the child must be fetched through that parent, not merely validated to exist.** Phases 4–9 add proposals, references, groups and evaluations, all of which take child ids in routes.
+
+Also fixed: the app was formatting dates in whatever culture the host machine ran, so pages rendered differently on different machines. The culture is pinned to `en-GB` with `el-GR` registered alongside it, ready for Phase 13.
 
 ### Phase 4 — Proposals *(≈1.5 weeks)*
 Proposal CRUD with the edit-window/lock lifecycle, author-only editing, vote-blocked-while-unlocked rule, comments on proposals, the three sort modes (score / date / last-commented), keyset pagination, filter by author. **Exit:** the core loop of the platform is usable end to end.

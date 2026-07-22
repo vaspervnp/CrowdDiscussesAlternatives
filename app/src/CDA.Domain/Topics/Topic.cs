@@ -102,22 +102,55 @@ public sealed class Topic
             ? throw new ArgumentOutOfRangeException(nameof(threshold), threshold, "Must not be negative.")
             : threshold;
 
-    public void MoveTo(TopicPhase phase)
-    {
-        if (!Enum.IsDefined(phase))
-        {
-            throw new ArgumentOutOfRangeException(nameof(phase), phase, "Unknown phase.");
-        }
+    /// <summary>
+    /// Whether the requirement list may still be changed.
+    /// </summary>
+    /// <remarks>
+    /// Only during the discussion phase. Once proposals start arriving they are written
+    /// against a published list, and groups are later scored against it; moving the goalposts
+    /// afterwards invalidates evaluations that people have already made without telling them.
+    /// </remarks>
+    public bool RequirementsAreEditable => Phase == TopicPhase.Discussing;
 
-        // Phases only move forward. Reopening a closed topic would resurrect votes that were
-        // cast on the understanding that the discussion had ended.
-        if (phase < Phase)
+    /// <summary>
+    /// Ends the discussion phase and opens the pool of proposals.
+    /// </summary>
+    /// <param name="requirementCount">How many requirements the topic has concluded on.</param>
+    /// <remarks>
+    /// This is the DISCUSS-to-TOPIC step from the spreadsheet the platform grew out of. A
+    /// topic cannot open for proposals with an empty requirement list: the list is what
+    /// alternative solutions are judged against, and scoring a group against nothing is not a
+    /// meaningful act.
+    /// </remarks>
+    public void OpenForProposals(int requirementCount)
+    {
+        RejectBackwardsMove(TopicPhase.Proposing);
+
+        if (requirementCount <= 0)
         {
             throw new InvalidOperationException(
-                $"A topic cannot move backwards from {Phase} to {phase}.");
+                "Agree at least one requirement before opening the topic for proposals — " +
+                "it is what the alternative solutions will be judged against.");
         }
 
-        Phase = phase;
+        Phase = TopicPhase.Proposing;
+    }
+
+    public void Close()
+    {
+        RejectBackwardsMove(TopicPhase.Closed);
+        Phase = TopicPhase.Closed;
+    }
+
+    // Phases only move forward. Reopening a closed topic would resurrect votes that were cast
+    // on the understanding that the discussion had ended.
+    private void RejectBackwardsMove(TopicPhase target)
+    {
+        if (target < Phase)
+        {
+            throw new InvalidOperationException(
+                $"A topic cannot move backwards from {Phase} to {target}.");
+        }
     }
 
     /// <summary>

@@ -167,7 +167,7 @@ public class TopicVotingTests(DatabaseFixture database) : IAsyncLifetime
         await using (var context = database.CreateContext())
         {
             var topic = await context.Topics.SingleAsync(t => t.Id == topicId);
-            topic.MoveTo(TopicPhase.Closed);
+            topic.Close();
             await context.SaveChangesAsync();
         }
 

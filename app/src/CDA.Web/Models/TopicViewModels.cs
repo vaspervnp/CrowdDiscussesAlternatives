@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using CDA.Application.Topics;
 using CDA.Domain.Topics;
+using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Topics;
 
 namespace CDA.Web.Models;
@@ -25,6 +26,20 @@ public sealed class CreateTopicViewModel
 
     [Display(Name = "Hide vote counts until the topic closes")]
     public bool HideVoteCountsUntilClose { get; set; }
+}
+
+public sealed class TopicDetailsViewModel
+{
+    public required TopicView Topic { get; init; }
+
+    public required IReadOnlyList<Requirement> Requirements { get; init; }
+
+    public required IReadOnlyList<CommentView> Comments { get; init; }
+
+    /// <summary>False once the topic has opened for proposals; the list is fixed from then on.</summary>
+    public required bool RequirementsAreEditable { get; init; }
+
+    public required bool CanComment { get; init; }
 }
 
 public sealed class TopicListViewModel

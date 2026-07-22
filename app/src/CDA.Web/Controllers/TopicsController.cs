@@ -1,6 +1,7 @@
 using CDA.Application.Abstractions;
 using CDA.Application.Topics;
 using CDA.Domain.Topics;
+using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Topics;
 using CDA.Infrastructure.Voting;
@@ -17,6 +18,8 @@ public sealed class TopicsController(
     CdaDbContext database,
     TopicService topics,
     TopicVotingService voting,
+    RequirementService requirements,
+    CommentService comments,
     IClock clock) : Controller
 {
     [HttpGet("")]
@@ -91,7 +94,14 @@ public sealed class TopicsController(
                 .SingleOrDefaultAsync(HttpContext.RequestAborted)
             : null;
 
-        return View(TopicView.Project(topic, viewer, clock.UtcNow, myVote));
+        return View(new TopicDetailsViewModel
+        {
+            Topic = TopicView.Project(topic, viewer, clock.UtcNow, myVote),
+            Requirements = await requirements.ListAsync(id, HttpContext.RequestAborted),
+            Comments = await comments.ForTopicAsync(id, viewer, HttpContext.RequestAborted),
+            RequirementsAreEditable = topic.RequirementsAreEditable,
+            CanComment = viewer.IsSignedIn && !topic.IsClosedAt(clock.UtcNow),
+        });
     }
 
     [HttpPost("{id:guid}/vote")]
@@ -175,7 +185,15 @@ public sealed class TopicsController(
 
         try
         {
-            topic.MoveTo(phase);
+            if (phase == TopicPhase.Closed)
+            {
+                topic.Close();
+            }
+            else
+            {
+                var agreed = await database.Requirements.CountAsync(r => r.TopicId == id, HttpContext.RequestAborted);
+                topic.OpenForProposals(agreed);
+            }
         }
         catch (InvalidOperationException error)
         {
@@ -186,6 +204,107 @@ public sealed class TopicsController(
         await database.SaveChangesAsync(HttpContext.RequestAborted);
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost("{id:guid}/comments")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PostComment(Guid id, string body)
+    {
+        var (topic, viewer) = await LoadAsync(id);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        var result = await comments.PostToTopicAsync(
+            id, viewer.UserId!.Value, body ?? string.Empty, HttpContext.RequestAborted);
+
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.Error;
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost("{id:guid}/comments/{commentId:guid}/delete")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteComment(Guid id, Guid commentId)
+    {
+        var (topic, viewer) = await LoadAsync(id);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        var result = await comments.DeleteAsync(id, commentId, viewer, HttpContext.RequestAborted);
+
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.Error;
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost("{id:guid}/requirements")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> AddRequirement(Guid id, string text) =>
+        AsFacilitatorAsync(id, () => requirements.AddAsync(id, text ?? string.Empty, HttpContext.RequestAborted));
+
+    [HttpPost("{id:guid}/requirements/{requirementId:guid}/edit")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> EditRequirement(Guid id, Guid requirementId, string text) =>
+        AsFacilitatorAsync(id, () => requirements.EditAsync(id, requirementId, text ?? string.Empty, HttpContext.RequestAborted));
+
+    [HttpPost("{id:guid}/requirements/{requirementId:guid}/remove")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> RemoveRequirement(Guid id, Guid requirementId) =>
+        AsFacilitatorAsync(id, () => requirements.RemoveAsync(id, requirementId, HttpContext.RequestAborted));
+
+    [HttpPost("{id:guid}/requirements/{requirementId:guid}/move")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> MoveRequirement(Guid id, Guid requirementId, bool up) =>
+        AsFacilitatorAsync(id, () => requirements.MoveAsync(id, requirementId, up, HttpContext.RequestAborted));
+
+    /// <summary>
+    /// Runs a requirement change after confirming the caller may administer the topic.
+    /// </summary>
+    /// <remarks>
+    /// The requirement id travels in the route, so the topic it belongs to is checked rather
+    /// than trusted — otherwise a facilitator of one topic could edit another topic's list by
+    /// pairing their own topic id with someone else's requirement.
+    /// </remarks>
+    private async Task<IActionResult> AsFacilitatorAsync(Guid topicId, Func<Task<RequirementChange>> change)
+    {
+        var (topic, viewer) = await LoadAsync(topicId);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        if (!TopicAccessPolicy.CanAdminister(topic, viewer))
+        {
+            return Forbid();
+        }
+
+        var result = await change();
+
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.Error;
+        }
+
+        return RedirectToAction(nameof(Details), new { id = topicId });
     }
 
     private async Task<(Topic? Topic, TopicViewer Viewer)> LoadAsync(Guid id)
