@@ -20,8 +20,9 @@ git clone https://github.com/vaspervnp/CrowdDiscussesAlternatives.git
 cd CrowdDiscussesAlternatives/app
 ```
 
-The connection string is **not** in the repository and never should be — this repository is
-public. Supply it through user secrets:
+The connection string is **not** in the repository and never should be: git history outlives
+any later deletion, and this project is meant to be open-sourced. Supply it through user
+secrets:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:Cda" \

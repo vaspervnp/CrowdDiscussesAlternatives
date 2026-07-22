@@ -107,7 +107,7 @@ One operational caveat: `VerifyFull` will start failing if the server's certific
 
 **Configuration:**
 - The connection string is **never committed**. `appsettings.json` ships a placeholder only.
-- Local development reads it from **.NET user secrets** (`dotnet user-secrets set "ConnectionStrings:Cda" "..."` on `CDA.Web`), which live outside the repo tree. The repository is public — a committed credential is a disclosed credential.
+- Local development reads it from **.NET user secrets** (`dotnet user-secrets set "ConnectionStrings:Cda" "..."` on `CDA.Web`), which live outside the repo tree. A committed credential is a disclosed credential: git history outlives any later deletion, and the project is intended to be open-sourced, so the repository's current visibility is not what makes this rule worth keeping.
 - Deployment/CI reads it from the environment variable `ConnectionStrings__Cda`.
 - `.gitignore` must cover `appsettings.*.Local.json` and any `*.env` from day one, before the first commit that touches configuration.
 
