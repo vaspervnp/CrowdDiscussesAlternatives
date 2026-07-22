@@ -490,3 +490,6 @@ appsettings.*.Local.json
 **/appsettings.*.Local.json
 *.env
 secrets.json
+
+# Uploaded attachments. Whatever people upload is theirs, not part of the source.
+**/App_Data/

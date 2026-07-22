@@ -23,6 +23,50 @@ namespace CDA.Infrastructure.Persistence.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("CDA.Domain.Attachments.Attachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("varchar(260)");
+
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StoredName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<Guid>("TopicId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProposalId");
+
+                    b.HasIndex("TopicId", "Id");
+
+                    b.ToTable("Attachments", (string)null);
+                });
+
             modelBuilder.Entity("CDA.Domain.Discussion.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -211,6 +255,103 @@ namespace CDA.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_Groups_Score");
 
                     b.ToTable("ProposalGroups", (string)null);
+                });
+
+            modelBuilder.Entity("CDA.Domain.Messaging.PrivateMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<Guid>("FromUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("SentAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("ToUserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromUserId", "SentAtUtc");
+
+                    b.HasIndex("ToUserId", "ReadAtUtc");
+
+                    b.HasIndex("ToUserId", "SentAtUtc");
+
+                    b.ToTable("PrivateMessages", (string)null);
+                });
+
+            modelBuilder.Entity("CDA.Domain.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EmailedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<Guid?>("TopicId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TopicId");
+
+                    b.HasIndex("EmailedAtUtc", "CreatedAtUtc")
+                        .HasDatabaseName("IX_Notifications_Outbox");
+
+                    b.HasIndex("UserId", "CreatedAtUtc");
+
+                    b.HasIndex("UserId", "ReadAtUtc");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
+            modelBuilder.Entity("CDA.Domain.Notifications.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Delivery")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("NotificationPreferences", (string)null);
                 });
 
             modelBuilder.Entity("CDA.Domain.Parameters.Parameter", b =>
@@ -927,6 +1068,21 @@ namespace CDA.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("CDA.Domain.Attachments.Attachment", b =>
+                {
+                    b.HasOne("CDA.Domain.Proposals.Proposal", null)
+                        .WithMany()
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CDA.Domain.Topics.Topic", null)
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CDA.Domain.Discussion.Comment", b =>
                 {
                     b.HasOne("CDA.Domain.Groups.ProposalGroup", null)
@@ -1019,6 +1175,14 @@ namespace CDA.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TopicId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("CDA.Domain.Notifications.Notification", b =>
+                {
+                    b.HasOne("CDA.Domain.Topics.Topic", null)
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("CDA.Domain.Parameters.Parameter", b =>

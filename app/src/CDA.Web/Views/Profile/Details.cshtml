@@ -58,3 +58,8 @@
 {
     <a asp-action="Edit" class="btn btn-outline-primary">Edit my profile</a>
 }
+else if (User.Identity?.IsAuthenticated == true)
+{
+    <a asp-controller="Messages" asp-action="Conversation" asp-route-withUserId="@Model.UserId"
+       class="btn btn-outline-secondary">Send a message</a>
+}

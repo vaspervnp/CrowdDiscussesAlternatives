@@ -1,0 +1,38 @@
+@model CDA.Web.Models.ConversationListViewModel
+@{
+    ViewData["Title"] = "Messages";
+}
+
+<h1>Messages</h1>
+
+<p class="text-muted col-lg-9">
+    For the things that genuinely are between two people. Anything that bears on a topic belongs
+    in the topic, where everyone can see it and it counts towards a conclusion.
+</p>
+
+@if (Model.Conversations.Count == 0)
+{
+    <p class="text-muted fst-italic">
+        No messages. You can start one from anybody's profile.
+    </p>
+}
+
+<div class="list-group col-lg-9">
+@foreach (var conversation in Model.Conversations)
+{
+    <a asp-action="Conversation" asp-route-withUserId="@conversation.WithUserId"
+       class="list-group-item list-group-item-action">
+        <div class="d-flex justify-content-between">
+            <strong>
+                @conversation.WithDisplayName
+                @if (conversation.Unread > 0)
+                {
+                    <span class="badge bg-primary">@conversation.Unread new</span>
+                }
+            </strong>
+            <small class="text-muted">@conversation.LastAtUtc.ToString("d MMM yyyy HH:mm") UTC</small>
+        </div>
+        <small class="text-muted">@conversation.LastBody</small>
+    </a>
+}
+</div>

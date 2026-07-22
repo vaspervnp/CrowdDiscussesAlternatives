@@ -56,6 +56,13 @@ def shot(page, name, full=True):
     print(f"  wrote {path.name}")
 
 
+def shot_region(page, selector, name):
+    """One section of a page, for when a full-page shot would repeat an earlier one."""
+    path = OUT / f"{name}.png"
+    page.locator(selector).screenshot(path=str(path))
+    print(f"  wrote {path.name}")
+
+
 def create_topic(page, subject, description, hide_counts=False):
     page.goto(f"{BASE}/topics/create")
     page.fill("#Subject", subject)
@@ -221,23 +228,30 @@ def build_factor_table(page, topic_url, name, factors, cells):
 
 
 def reset_database():
-    """Start from an empty database so the captures are reproducible."""
+    """Start from an empty database so the captures are reproducible.
+
+    The tables are read from the schema rather than listed here. A hand-written list went
+    stale twice — a phase adds a table, nobody remembers to add it, and the next run seeds
+    on top of the last one's leftovers.
+    """
     import pymysql
     con = pymysql.connect(host=DB_HOST, port=3306, user=DB_USER, password=DB_PASSWORD,
                           ssl={"ssl_mode": "REQUIRED"}, database=DB_NAME, connect_timeout=15)
     cur = con.cursor()
+    cur.execute(
+        "SELECT table_name FROM information_schema.tables "
+        "WHERE table_schema = %s AND table_type = 'BASE TABLE' "
+        "AND table_name <> '__EFMigrationsHistory'", (DB_NAME,))
+    tables = [row[0] for row in cur.fetchall()]
+
+    # Foreign keys are cyclic across the model, so the truncations cannot be ordered.
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
-    for t in ("Comments", "RequirementScores", "RequirementWeights", "Requirements", "Votes",
-              "ParameterInfluences", "Parameters", "ParameterTables",
-              "SimilarityReports", "GroupItems",
-              "ProposalGroups", "ProposalReferences", "References", "TopicUserReputations",
-              "Proposals", "TopicMembers", "Topics", "UserProfiles", "AspNetUserClaims",
-              "AspNetUserLogins", "AspNetUserRoles", "AspNetUserTokens", "AspNetUsers"):
+    for t in tables:
         cur.execute(f"TRUNCATE TABLE `{t}`")
     cur.execute("SET FOREIGN_KEY_CHECKS = 1")
     con.commit()
     con.close()
-    print("database cleared")
+    print(f"database cleared ({len(tables)} tables)")
 
 
 def main():
@@ -477,6 +491,49 @@ def main():
         # Scoped to main: the nav's "My profile" link points at /profiles/me, which would
         # simply redirect an anonymous visitor to the sign-in page.
         chair_id = page.query_selector("main a[href*='/profiles/']").get_attribute("href")
+        chair_uuid = chair_id.rsplit("/", 1)[-1]
+
+        print("attaching a file to a proposal")
+        attachment = pathlib.Path(os.environ.get("TEMP", ".")) / "session-players-1971.csv"
+        attachment.write_text(
+            "track,instrument,player\n"
+            "3,flute,uncredited session player\n"
+            "7,strings,city chamber ensemble\n",
+            encoding="utf-8")
+        page.goto(f"{BASE}{instrumental}")
+        page.set_input_files("#attachments input[type=file]", str(attachment))
+        page.click("#attachments button")
+        page.wait_for_load_state("networkidle")
+        page.goto(f"{BASE}{instrumental}")
+        shot_region(page, "#attachments", "proposal-attachments")
+
+        print("exchanging private messages")
+        sign_in(page, "editor@example.com")
+        page.goto(f"{BASE}/messages/{chair_uuid}")
+        page.fill("textarea[name=body]",
+                  "Would you take a look at the retrospective before the vote closes? "
+                  "I think the rarities argument needs your view.")
+        # The send button carries no explicit type, so match the form rather than the attribute.
+        page.click("form[action*='/messages/'] button")
+        page.wait_for_load_state("networkidle")
+
+        sign_in(page, "chair@example.com")
+        page.goto(f"{BASE}/messages")
+        shot(page, "messages")
+
+        # Captured unread, then opened — the badge in the shot above is the point of it.
+        thread = page.query_selector("main a[href*='/messages/']").get_attribute("href")
+        page.goto(f"{BASE}{thread}")
+        page.fill("textarea[name=body]",
+                  "Happy to. The breadth argument is the strongest part of it — say more about "
+                  "which rarities you mean.")
+        page.click("form[action*='/messages/'] button")
+        page.wait_for_load_state("networkidle")
+        shot(page, "conversation")
+
+        print("capturing the notifications page")
+        page.goto(f"{BASE}/notifications")
+        shot(page, "notifications")
 
         print("capturing the anonymous view")
         sign_out(page)

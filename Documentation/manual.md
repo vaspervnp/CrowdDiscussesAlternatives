@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 11**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 12**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -587,7 +587,116 @@ has agreed.
 
 ---
 
-## 13. Quick reference
+## 13. Being told what happened
+
+Three things bring you back to a topic: somebody commenting on your proposal, somebody
+commenting on an alternative you assembled, and somebody reporting your proposal as a duplicate
+of another. All three are recorded on your **Notifications** page, reachable from the navigation
+bar — which carries a count of anything unread, so you do not have to open the page to find out
+whether there is something on it.
+
+The duplicate report is the one worth reading promptly: if enough people agree with it, your
+proposal folds out of the pool's default view (chapter 8), and the time to argue that the two
+say different things is before that happens.
+
+![The notifications page](images/notifications.png)
+
+Each entry is a link to the thing that happened, so reading one takes you to it. **Mark
+everything as read** clears the list's highlighting without deleting anything.
+
+### You are never told about your own doing
+
+Commenting on your own proposal produces no notification. Being told what you have just done is
+noise, and noise is what makes people stop reading notifications at all.
+
+### How often you get email
+
+At the top of the page is one setting with three values:
+
+| Setting | What happens |
+|---|---|
+| **Once a day, gathered together** | One email collecting everything from the past day. This is the default. |
+| **As things happen** | One email per event. |
+| **Never — I will look here** | No email at all. |
+
+The default is a digest, not immediate mail, because a busy topic produces a great many events
+and an inbox full of them is the fastest way to make someone stop reading any of them.
+
+**Turning email off costs you nothing.** The setting governs email only — everything is still
+recorded on the notifications page whatever you choose, so nothing is lost by never being
+mailed.
+
+### Email is not switched on yet
+
+This installation has no mail server configured, and the page says so rather than offering a
+setting that quietly does nothing. Your preference is remembered, and nothing is thrown away
+while email is off: anything that would have been sent stays queued, so when a mail server is
+configured the backlog goes out rather than having been silently discarded.
+
+---
+
+## 14. Private messages
+
+Some things genuinely are between two people — asking someone to look at an alternative before
+a vote closes, or working out who is writing what. **Messages**, in the navigation bar, is for
+those.
+
+![The list of conversations](images/messages.png)
+
+You start a conversation from somebody's profile: **Send a message**. After that the
+conversation lives in your Messages list, most recent first, with a count of anything you have
+not read.
+
+![A conversation](images/conversation.png)
+
+Opening a conversation marks the messages *addressed to you* as read. Your own sent messages are
+untouched — opening your side of a thread does not mean the other person has read it. Where they
+have, the message says **read** underneath.
+
+### Most things do not belong here
+
+Anything that bears on a topic belongs **in** the topic. A point made in a private message
+persuades one person, leaves no record, and counts towards no conclusion; the same point made in
+the topic is visible to everyone and can be voted on. Private messages exist for the
+arrangements around the discussion, not the discussion itself.
+
+---
+
+## 15. Attaching a file
+
+A proposal can carry files: the survey nobody has put on the web, a spreadsheet of figures, a
+photograph of the junction being argued about.
+
+![Attaching a file to a proposal](images/proposal-attachments.png)
+
+### Cite a link if there is one
+
+If the thing is already on the web, **cite it as a source instead** (chapter 7). A link keeps
+its context, can be checked by anyone, and gets rated for accuracy and relevance. A copy
+uploaded here has none of that. Attachments are for what has no link of its own.
+
+### What is accepted
+
+| | |
+|---|---|
+| **Size** | Up to 10 MB per file |
+| **Kinds** | Documents, spreadsheets, presentations, PDFs, images, plain text, CSV |
+
+Anything that could run — programs, scripts, web pages — is refused, whatever it is named. This
+is a list of what is allowed rather than a list of what is banned: a ban list has to anticipate
+every dangerous kind of file and is wrong the moment a new one appears, while an allow list is
+wrong only by being inconvenient.
+
+Files are served as downloads, never displayed in the page, and are only reachable through the
+topic they were attached to. An attachment in an invite-only topic cannot be fetched by anyone
+who is not in that topic.
+
+Attaching follows the same rule as citing: you must be able to take part in the topic, and a
+closed topic accepts nothing further.
+
+---
+
+## 16. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -618,6 +727,13 @@ has agreed.
 | Can someone edit my factor table? | No. Sharing makes it readable, never editable — it stays your reading of the problem. |
 | Why can I not put numbers in the factor table? | It is a qualitative sketch. Figures would invite arithmetic the underlying guesswork cannot support. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
+| I turned email off — will I miss things? | No. Everything is still listed on your notifications page; the setting governs email only. |
+| I am not getting any email. | No mail server is configured for this installation yet. Nothing is lost — it stays queued until one is. |
+| Why was I not told about my own comment? | You are never notified about your own doing. |
+| Should I send this in a message or post it? | If it bears on the topic, post it. A private message persuades one person, leaves no record, and counts towards nothing. |
+| How do I know they read my message? | Their side of the thread says *read* once they have opened it. |
+| My upload was refused. | Either it is over 10 MB, or it is a kind of file that could run. Only documents, images, PDFs and plain text are accepted. |
+| Should I attach it or cite it? | Cite it if it is on the web — a link keeps its context and can be rated. Attach only what has no link of its own. |
 
 ---
 
@@ -628,7 +744,7 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| Email notification, personal messages, file attachments | 12 |
+| Email actually going out (a mail server is not configured; see [chapter 13](#13-being-told-what-happened)) | 12 |
 | A second interface language | 13 |
 
 The REST API is designed but not yet exposed; today the platform is the web interface only.

@@ -1,0 +1,41 @@
+@model CDA.Web.Models.ConversationViewModel
+@{
+    ViewData["Title"] = $"Messages with {Model.WithDisplayName}";
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-warning">@error</div>
+}
+
+<p class="mb-1">
+    <a asp-action="Index" class="text-decoration-none">&larr; Messages</a>
+</p>
+<h1 class="h3">
+    <a asp-controller="Profile" asp-action="Details" asp-route-id="@Model.WithUserId"
+       class="text-decoration-none">@Model.WithDisplayName</a>
+</h1>
+
+<div class="col-lg-8">
+@foreach (var message in Model.Messages)
+{
+    <div class="d-flex @(message.Mine ? "justify-content-end" : "")">
+        <div class="border rounded p-2 mb-2 @(message.Mine ? "bg-light" : "")" style="max-width: 32rem">
+            <p class="mb-1" style="white-space: pre-wrap">@message.Body</p>
+            <small class="text-muted">
+                @message.SentAtUtc.ToString("d MMM yyyy HH:mm") UTC
+                @if (message.Mine && message.IsRead)
+                {
+                    <span>&middot; read</span>
+                }
+            </small>
+        </div>
+    </div>
+}
+
+    <form method="post" asp-action="Send" asp-route-withUserId="@Model.WithUserId" class="mt-3">
+        <textarea name="body" class="form-control" rows="3" maxlength="4000" required
+                  placeholder="Write a message…"></textarea>
+        <button class="btn btn-primary mt-2">Send</button>
+    </form>
+</div>

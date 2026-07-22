@@ -20,6 +20,8 @@
     <ProjectReference Include="..\..\src\CDA.Application\CDA.Application.csproj" />
     <!-- For the connection-string guard, which is a pure function despite living in Infrastructure. -->
     <ProjectReference Include="..\..\src\CDA.Infrastructure\CDA.Infrastructure.csproj" />
+    <!-- Likewise the display formatters: presentation concerns, but pure functions. -->
+    <ProjectReference Include="..\..\src\CDA.Web\CDA.Web.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,7 @@
 using CDA.Application.Abstractions;
+using CDA.Domain.Notifications;
 using CDA.Domain.Similarity;
+using CDA.Infrastructure.Notifications;
 using CDA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,7 +31,8 @@ public sealed record SimilarityResult(bool Succeeded, Guid Id = default, string?
     public static SimilarityResult Refused(string reason) => new(false, Error: reason);
 }
 
-public sealed class SimilarityService(CdaDbContext database, IClock clock)
+public sealed class SimilarityService(
+    CdaDbContext database, NotificationService notifications, IClock clock)
 {
     public async Task<SimilarityResult> ReportAsync(
         Guid topicId,
@@ -99,6 +102,30 @@ public sealed class SimilarityService(CdaDbContext database, IClock clock)
         }
 
         database.SimilarityReports.Add(report);
+
+        // Both authors are told. Of everything that happens to a proposal this matters most:
+        // enough agreement with the report and their proposal folds out of the pool's default
+        // view, so they should hear about it while they can still argue the two are different.
+        var reporter = await database.UserProfiles
+            .AsNoTracking()
+            .SingleAsync(p => p.Id == userId, cancellationToken);
+
+        var authors = await database.Proposals
+            .AsNoTracking()
+            .Where(p => p.Id == firstProposalId || p.Id == secondProposalId)
+            .Select(p => new { p.Id, p.AuthorId })
+            .ToListAsync(cancellationToken);
+
+        foreach (var author in authors)
+        {
+            notifications.Enqueue(
+                author.AuthorId,
+                NotificationKind.SimilarityOnMyProposal,
+                $"{reporter.DisplayName} reported your proposal as saying the same as another",
+                $"/topics/{topicId}/proposals/{author.Id}",
+                topicId,
+                userId);
+        }
 
         try
         {

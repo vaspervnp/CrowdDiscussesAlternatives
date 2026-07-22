@@ -472,8 +472,25 @@ Decisions taken during the work:
 
 **A bug the service tests could not have caught.** The sharing form wrote `value="@(!table.IsShared)"`. Razor treats a boolean-valued attribute as an *HTML boolean attribute*: `true` renders `value="value"` and `false` omits the attribute entirely, so the form posted the literal string "value" and the flag never changed. Every service-level test passed. It surfaced only when the screenshot script drove the real form and the badge stayed on "private". `ParameterTableFormTests` now exercises the rendered HTML over HTTP, and needed an `https` base address of its own — the authentication cookie is issued `Secure`, so a test client on plain http silently drops it and every request arrives anonymous. Worth remembering: **a form's correctness is not established by testing the service behind it.**
 
-### Phase 12 — Notifications, messaging, attachments *(≈1.5 weeks)*
-Outbox + background sender (MailKit), per-user notification preferences and digests, personal messages, file attachments on disk behind an authorizing controller (extension allowlist, size cap, no direct static-file exposure). **Exit:** users are informed of activity without polling.
+### Phase 12 — Notifications, messaging, attachments ✅ *done 2026-07-22*
+Notifications with an email outbox and a background dispatcher, per-user delivery preferences and daily digests, private messages, and file attachments on disk behind an authorizing controller.
+
+**Exit criteria met**, verified in a browser: a comment on someone else's proposal appears on their notifications page and is queued for email; a private message arrives with an unread badge and marks itself read only on the recipient's side; a spreadsheet attached to a proposal downloads under its original name. 366 tests pass (210 unit, 156 integration).
+
+Decisions taken during the work:
+- **The notifications table *is* the outbox.** A row with no `EmailedAtUtc` is waiting to go out. A separate outbox table would need its own write, and the two writes could disagree — an email queued for a comment whose transaction rolled back would send someone to a page that does not exist. Enqueuing into the *caller's* unit of work makes that impossible: the notification commits with its cause or not at all. `IX_Notifications_Outbox` keeps the dispatcher's scan off the main table.
+- **A row is stamped sent *before* the message goes out.** The two failure modes are sending twice and sending nothing. Stamping afterwards risks an endless loop of duplicates when the send succeeds and the stamp fails; someone missing one notification is the smaller harm, and it is still on their notifications page regardless.
+- **With no mail host, the backlog is left queued rather than discarded.** `IEmailSender.CanDeliver` is deliberately public: the dispatcher returns early rather than stamping rows it never sent, and the notifications page says plainly that email is off instead of offering a setting that quietly does nothing. Configure a host later and the backlog goes out.
+- **Digests by default, not immediate mail.** A busy topic produces a great many events, and an inbox full of them is the fastest way to make someone stop reading any of them. A digest waits 24 hours from its oldest queued item, then goes as one message.
+- **A "no email" preference still stamps the rows**, taking them out of the queue rather than having the dispatcher reconsider them every minute forever.
+- **Nobody is notified of their own doing.** `Enqueue` returns early when the actor is the recipient. Being told you commented on your own proposal is noise, and noise is what makes people stop reading notifications.
+- **Unread counts in the navigation bar**, at the cost of two indexed counts per page render. Without a number there you would have to open the page to discover whether anything was on it, which is exactly the polling this phase exists to remove; both indexes were added for it.
+- **Uploaded files are stored under a generated name.** Nothing the uploader typed reaches the filesystem: `../../appsettings.json` is a path traversal and `index.html` invites the file to be served as a page. The original name lives in the database and only labels the download. Files sit outside `wwwroot`, so there is no URL that reaches one without passing the topic access check.
+- **An allowlist of extensions, not a blocklist.** A blocklist must anticipate every dangerous extension and is wrong the moment a new one appears; an allowlist is wrong only by being inconvenient. `.html` and `.svg` are refused for the same reason as `.exe` — served from this origin they would run their own script against a signed-in reader's session. Downloads go out as `application/octet-stream` with `X-Content-Type-Options: nosniff` and never inline.
+- **Attachments are scoped to their topic**, not fetched by id alone. The controller checks access to the topic in the URL, so an id from a private discussion must not be fetchable by quoting it against a public one — the same scoping rule already applied to proposals and comments.
+- **10 MB cap**, with the refusal message pointing at citing a source instead. A reference is a link; an attachment is for the thing that has no link.
+
+**Account confirmation stays off.** The plan said to turn `SignIn.RequireConfirmedAccount` on in the same change that introduces email. It is still off, deliberately: no SMTP provider is configured (§9), so enabling it would send every new registration to a confirmation email that cannot arrive and lock everyone out. It goes on in the change that configures a real mail host, not before.
 
 ### Phase 13 — Localization *(≈0.5 week)*
 DB-backed `IStringLocalizer`, `%data%` placeholder substitution, culture negotiation, translation admin screen, English + Greek seed. **Exit:** the UI renders fully in a second language.
@@ -521,7 +538,7 @@ Group trees / nested clustering for detailed solutions, availability calendar, S
 
 1. **Credential hygiene** — the database account is granted from any host (`'<user>'@'%'`) on a publicly reachable server, and its password has been shared in plaintext. Restrict the grant to known source hosts if the hosting allows it, and rotate the password before anything resembling production data exists. Host names, user names and schema names are deliberately written as placeholders throughout this document: it describes the shape of the deployment, not its coordinates.
 2. **Public topic write access** — on a Public topic, can any authenticated user post immediately, or do they join first and the facilitator approves? Assumed: join is automatic on first write, no approval.
-3. **Email delivery** — which SMTP provider, and is a sending domain available? Needed by Phase 12, not before.
+3. **Email delivery** — which SMTP provider, and is a sending domain available? Phase 12 is built and works without one: nothing is sent, the notifications page says so, and the queue is preserved for whenever a host is configured (`Email:Host`, `Email:Port`, `Email:UserName`, `Email:Password`, `Email:FromAddress` — never in the repository). Two things wait on the answer: email actually going out, and turning `SignIn.RequireConfirmedAccount` on, which cannot be enabled until confirmation mail can arrive.
 
 ---
 

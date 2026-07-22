@@ -1,6 +1,9 @@
 using System.Net;
 using CDA.Application.Abstractions;
+using CDA.Infrastructure.Attachments;
 using CDA.Infrastructure.Discussion;
+using CDA.Infrastructure.Messaging;
+using CDA.Infrastructure.Notifications;
 using CDA.Infrastructure.Evaluation;
 using CDA.Infrastructure.Groups;
 using CDA.Infrastructure.Identity;
@@ -78,6 +81,29 @@ public static class DependencyInjection
         services.AddScoped<EvaluationService>();
         services.AddScoped<CommentSearchService>();
         services.AddScoped<ParameterTableService>();
+        services.AddScoped<NotificationService>();
+        services.AddScoped<MessageService>();
+        services.AddScoped<AttachmentService>();
+
+        var email = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>() ?? new EmailOptions();
+        services.AddSingleton(email);
+
+        // No mail host, no pretending. The logging sender reports that it cannot deliver, and
+        // everything that depends on email asks before offering itself.
+        if (email.IsConfigured)
+        {
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
+        }
+        else
+        {
+            services.AddScoped<IEmailSender, LoggingEmailSender>();
+        }
+
+        services.AddSingleton(
+            configuration.GetSection(AttachmentOptions.SectionName).Get<AttachmentOptions>()
+            ?? new AttachmentOptions());
+
+        services.AddHostedService<NotificationDispatcher>();
 
         return services;
     }

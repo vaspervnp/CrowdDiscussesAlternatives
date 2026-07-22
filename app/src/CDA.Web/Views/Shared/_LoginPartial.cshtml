@@ -1,11 +1,43 @@
 @using CDA.Infrastructure.Identity
+@using CDA.Infrastructure.Messaging
+@using CDA.Infrastructure.Notifications
+@using CDA.Web.Security
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<CdaUser> SignInManager
 @inject UserManager<CdaUser> UserManager
+@inject NotificationService Notifications
+@inject MessageService Messages
 
 <ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
 {
+    @*
+        Two indexed counts per page render. Worth it: without a number here you would have to
+        open the page to discover there was anything on it, which is the polling this phase
+        exists to remove.
+    *@
+    var me = User.GetUserId()!.Value;
+    var unreadNotifications = await Notifications.UnreadCountAsync(me);
+    var unreadMessages = await Messages.UnreadCountAsync(me);
+
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">
+            Notifications
+            @if (unreadNotifications > 0)
+            {
+                <span class="badge bg-primary">@unreadNotifications</span>
+            }
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Messages" asp-action="Index">
+            Messages
+            @if (unreadMessages > 0)
+            {
+                <span class="badge bg-primary">@unreadMessages</span>
+            }
+        </a>
+    </li>
     <li class="nav-item">
         <a class="nav-link text-dark" asp-controller="Profile" asp-action="Edit">My profile</a>
     </li>

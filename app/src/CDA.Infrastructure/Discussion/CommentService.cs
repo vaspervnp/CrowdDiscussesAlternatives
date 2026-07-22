@@ -1,7 +1,9 @@
 using CDA.Application.Abstractions;
 using CDA.Application.Topics;
 using CDA.Domain.Discussion;
+using CDA.Domain.Notifications;
 using CDA.Domain.Topics;
+using CDA.Infrastructure.Notifications;
 using CDA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +28,7 @@ public sealed record CommentResult(bool Succeeded, string? Error = null)
     public static CommentResult Refused(string reason) => new(false, reason);
 }
 
-public sealed class CommentService(CdaDbContext database, IClock clock)
+public sealed class CommentService(CdaDbContext database, NotificationService notifications, IClock clock)
 {
     /// <summary>
     /// Posts a comment to a topic's discussion.
@@ -165,6 +167,20 @@ public sealed class CommentService(CdaDbContext database, IClock clock)
         // sorted as though nothing had been said.
         proposal.RecordComment(now);
 
+        var commenter = await database.UserProfiles
+            .AsNoTracking()
+            .SingleAsync(p => p.Id == authorId, cancellationToken);
+
+        // Enqueued rather than sent: it commits with the comment, so nobody is ever pointed at
+        // something that was rolled back.
+        notifications.Enqueue(
+            proposal.AuthorId,
+            NotificationKind.CommentOnMyProposal,
+            $"{commenter.DisplayName} commented on your proposal",
+            $"/topics/{topicId}/proposals/{proposalId}",
+            topicId,
+            authorId);
+
         await database.SaveChangesAsync(cancellationToken);
 
         return CommentResult.Ok;
@@ -222,6 +238,18 @@ public sealed class CommentService(CdaDbContext database, IClock clock)
 
         database.Comments.Add(Comment.OnGroup(topicId, groupId, authorId, body, now));
         group.RecordComment(now);
+
+        var groupCommenter = await database.UserProfiles
+            .AsNoTracking()
+            .SingleAsync(p => p.Id == authorId, cancellationToken);
+
+        notifications.Enqueue(
+            group.CreatedByUserId,
+            NotificationKind.CommentOnMyAlternative,
+            $"{groupCommenter.DisplayName} commented on your alternative",
+            $"/topics/{topicId}/alternatives/{groupId}",
+            topicId,
+            authorId);
 
         await database.SaveChangesAsync(cancellationToken);
 

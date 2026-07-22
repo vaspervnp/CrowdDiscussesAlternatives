@@ -2,6 +2,7 @@ using CDA.Application.Abstractions;
 using CDA.Application.Topics;
 using CDA.Domain.Proposals;
 using CDA.Domain.References;
+using CDA.Infrastructure.Attachments;
 using CDA.Infrastructure.Discussion;
 using CDA.Infrastructure.Persistence;
 using CDA.Infrastructure.Proposals;
@@ -28,6 +29,7 @@ public sealed class ProposalsController(
     ReferenceVotingService referenceVoting,
     SimilarityService similarity,
     SimilarityVotingService similarityVoting,
+    AttachmentService attachments,
     IClock clock) : Controller
 {
     [HttpGet("")]
@@ -129,8 +131,77 @@ public sealed class ProposalsController(
             References = await references.ForProposalAsync(id, viewer.UserId, HttpContext.RequestAborted),
             Similarities = await similarity.ForProposalAsync(
                 id, viewer.UserId, topic.DefaultSimilarityThreshold, HttpContext.RequestAborted),
+            Attachments = await attachments.ForProposalAsync(id, HttpContext.RequestAborted),
             CanCite = viewer.IsSignedIn && !topic.IsClosedAt(clock.UtcNow),
         });
+    }
+
+    [HttpPost("{id:guid}/attachments")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(Domain.Attachments.Attachment.MaxSizeBytes + 8192)]
+    public async Task<IActionResult> AddAttachment(Guid topicId, Guid id, IFormFile? file)
+    {
+        var (topic, viewer) = await LoadTopicAsync(topicId);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        if (file is null || file.Length == 0)
+        {
+            TempData["Error"] = "Choose a file to attach.";
+            return RedirectToAction(nameof(Details), new { topicId, id });
+        }
+
+        await using var content = file.OpenReadStream();
+
+        var result = await attachments.StoreAsync(
+            topicId, id, viewer.UserId!.Value, file.FileName, file.ContentType,
+            content, file.Length, HttpContext.RequestAborted);
+
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = result.Error;
+        }
+
+        return RedirectToAction(nameof(Details), new { topicId, id });
+    }
+
+    /// <summary>
+    /// Streams an attachment back, after checking the caller may read its topic.
+    /// </summary>
+    /// <remarks>
+    /// Uploads are never served as static files. Everything here — the access check, the
+    /// forced download, the refusal to let the browser guess a content type — is undone the
+    /// moment a file sits in a folder the web server publishes.
+    /// </remarks>
+    [HttpGet("{id:guid}/attachments/{attachmentId:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Download(Guid topicId, Guid id, Guid attachmentId)
+    {
+        var (topic, viewer) = await LoadTopicAsync(topicId);
+
+        if (topic is null || !TopicAccessPolicy.CanView(topic, viewer))
+        {
+            return NotFound();
+        }
+
+        var download = await attachments.OpenAsync(topicId, attachmentId, HttpContext.RequestAborted);
+
+        if (download is null)
+        {
+            return NotFound();
+        }
+
+        // nosniff, so a text file cannot be re-interpreted as script by a browser that thinks
+        // it knows better than the declared type.
+        Response.Headers.XContentTypeOptions = "nosniff";
+
+        // Always an attachment, never inline: an uploaded HTML or SVG file rendered in this
+        // origin would run its own script against a signed-in reader's session.
+        return File(download.Content, "application/octet-stream", download.FileName);
     }
 
     [HttpPost("{id:guid}/similar")]

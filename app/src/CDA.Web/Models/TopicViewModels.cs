@@ -2,7 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using CDA.Application.Proposals;
 using CDA.Application.Topics;
 using CDA.Domain.Topics;
+using CDA.Infrastructure.Attachments;
 using CDA.Infrastructure.Discussion;
+using CDA.Infrastructure.Messaging;
+using CDA.Infrastructure.Notifications;
 using CDA.Infrastructure.Evaluation;
 using CDA.Infrastructure.Groups;
 using CDA.Infrastructure.Parameters;
@@ -84,6 +87,8 @@ public sealed class ProposalDetailsViewModel
     public required IReadOnlyList<ReferenceView> References { get; init; }
 
     public required IReadOnlyList<SimilarityView> Similarities { get; init; }
+
+    public required IReadOnlyList<AttachmentView> Attachments { get; init; }
 
     public required bool CanCite { get; init; }
 }
@@ -183,6 +188,30 @@ public sealed class ParameterTableViewModel
     public required string TopicSubject { get; init; }
 
     public required ParameterTableView Table { get; init; }
+}
+
+public sealed class ConversationListViewModel
+{
+    public required IReadOnlyList<ConversationSummary> Conversations { get; init; }
+}
+
+public sealed class ConversationViewModel
+{
+    public required Guid WithUserId { get; init; }
+
+    public required string WithDisplayName { get; init; }
+
+    public required IReadOnlyList<MessageView> Messages { get; init; }
+}
+
+public sealed class NotificationsViewModel
+{
+    public required IReadOnlyList<NotificationView> Notifications { get; init; }
+
+    public required CDA.Domain.Notifications.NotificationDelivery Delivery { get; init; }
+
+    /// <summary>False when no mail host is configured, so the page can say so.</summary>
+    public required bool EmailWorks { get; init; }
 }
 
 public sealed class TopicListViewModel

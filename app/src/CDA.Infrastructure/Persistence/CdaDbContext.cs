@@ -1,4 +1,7 @@
+using CDA.Domain.Attachments;
 using CDA.Domain.Discussion;
+using CDA.Domain.Messaging;
+using CDA.Domain.Notifications;
 using CDA.Domain.Evaluation;
 using CDA.Domain.Groups;
 using CDA.Domain.Parameters;
@@ -55,6 +58,14 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     public DbSet<Parameter> Parameters => Set<Parameter>();
 
     public DbSet<ParameterInfluence> ParameterInfluences => Set<ParameterInfluence>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+
+    public DbSet<PrivateMessage> PrivateMessages => Set<PrivateMessage>();
+
+    public DbSet<Attachment> Attachments => Set<Attachment>();
 
     public DbSet<Vote> Votes => Set<Vote>();
 
