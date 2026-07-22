@@ -3,6 +3,7 @@ using CDA.Application.Proposals;
 using CDA.Application.Topics;
 using CDA.Domain.Topics;
 using CDA.Infrastructure.Discussion;
+using CDA.Infrastructure.Groups;
 using CDA.Infrastructure.Proposals;
 using CDA.Infrastructure.References;
 using CDA.Infrastructure.Similarity;
@@ -82,6 +83,44 @@ public sealed class ProposalDetailsViewModel
     public required IReadOnlyList<SimilarityView> Similarities { get; init; }
 
     public required bool CanCite { get; init; }
+}
+
+public sealed class GroupListViewModel
+{
+    public required TopicView Topic { get; init; }
+
+    public required IReadOnlyList<GroupView> Groups { get; init; }
+
+    public required GroupSort Sort { get; init; }
+
+    public string? NextCursor { get; init; }
+
+    /// <summary>Whose alternatives are listed first, and why.</summary>
+    public required IReadOnlyList<string> TopCiters { get; init; }
+
+    public required bool CanAssemble { get; init; }
+}
+
+public sealed class GroupDetailsViewModel
+{
+    public required TopicView Topic { get; init; }
+
+    public required GroupView Group { get; init; }
+
+    public required IReadOnlyList<CommentView> Comments { get; init; }
+
+    public required bool CanComment { get; init; }
+}
+
+public sealed class AssembleGroupViewModel
+{
+    public required TopicView Topic { get; init; }
+
+    public required IReadOnlyList<ProposalView> Pool { get; init; }
+
+    public Guid? ImprovesGroupId { get; init; }
+
+    public string? ImprovesDescription { get; init; }
 }
 
 public sealed class TopicListViewModel

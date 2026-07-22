@@ -140,6 +140,43 @@ def rate(page, proposal_url, reference_index, aspect, value):
     page.wait_for_load_state("networkidle")
 
 
+def assemble(page, topic_url, description, proposal_indexes):
+    """Builds an alternative from the proposals at the given positions in the pool."""
+    page.goto(f"{topic_url}/alternatives/assemble")
+    page.fill("#description", description)
+    boxes = page.query_selector_all("input[name=proposalIds]")
+    for index in proposal_indexes:
+        boxes[index].check()
+    page.click("main form button[type=submit]")
+    page.wait_for_load_state("networkidle")
+
+
+def alternative_url(page, topic_url, text_fragment):
+    """Finds an alternative by its wording.
+
+    Not by position: the list puts the best-regarded citers' alternatives first, so index
+    order does not follow creation order.
+    """
+    page.goto(f"{topic_url}/alternatives")
+    for link in page.query_selector_all("main .list-group-item a[href*='/alternatives/']"):
+        if text_fragment in link.inner_text():
+            return link.get_attribute("href")
+    raise AssertionError(f"no alternative matching {text_fragment!r}")
+
+
+def vote_on_group(page, group_url, value):
+    page.goto(f"{BASE}{group_url}")
+    page.click(f"button[name=value][value='{value}']")
+    page.wait_for_load_state("networkidle")
+
+
+def comment_on_group(page, group_url, body):
+    page.goto(f"{BASE}{group_url}")
+    page.fill("textarea[name=body]", body)
+    page.click("form[action$='/comments'] button")
+    page.wait_for_load_state("networkidle")
+
+
 def reset_database():
     """Start from an empty database so the captures are reproducible."""
     import pymysql
@@ -147,10 +184,10 @@ def reset_database():
                           ssl={"ssl_mode": "REQUIRED"}, database=DB_NAME, connect_timeout=15)
     cur = con.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
-    for t in ("Comments", "Requirements", "Votes", "SimilarityReports", "ProposalReferences",
-              "References", "TopicUserReputations", "Proposals", "TopicMembers", "Topics",
-              "UserProfiles", "AspNetUserClaims", "AspNetUserLogins", "AspNetUserRoles",
-              "AspNetUserTokens", "AspNetUsers"):
+    for t in ("Comments", "Requirements", "Votes", "SimilarityReports", "GroupItems",
+              "ProposalGroups", "ProposalReferences", "References", "TopicUserReputations",
+              "Proposals", "TopicMembers", "Topics", "UserProfiles", "AspNetUserClaims",
+              "AspNetUserLogins", "AspNetUserRoles", "AspNetUserTokens", "AspNetUsers"):
         cur.execute(f"TRUNCATE TABLE `{t}`")
     cur.execute("SET FOREIGN_KEY_CHECKS = 1")
     con.commit()
@@ -314,6 +351,34 @@ def main():
         print("capturing a proposal that has locked and is being voted on")
         page.goto(f"{BASE}{instrumental}")
         shot(page, "proposal-locked")
+
+        print("assembling alternative solutions")
+        sign_in(page, "listener@example.com")
+        assemble(page, songs,
+                 "A short, focused record: open strong, keep it under 50 minutes, no filler.",
+                 [0, 1, 2])
+
+        sign_in(page, "editor@example.com")
+        assemble(page, songs,
+                 "A career retrospective instead — breadth over tightness, including rarities.",
+                 [1, 3])
+
+        # Editor backs their own retrospective; Chair prefers the short record.
+        retrospective = alternative_url(page, songs, "career retrospective")
+        focused = alternative_url(page, songs, "short, focused record")
+        vote_on_group(page, retrospective, 1)
+
+        sign_in(page, "chair@example.com")
+        vote_on_group(page, focused, 1)
+        comment_on_group(page, focused,
+                         "The under-50-minutes rule is what makes this work — it forces the choices.")
+
+        print("capturing the alternatives")
+        page.goto(f"{songs}/alternatives")
+        shot(page, "alternatives-list")
+
+        page.goto(f"{BASE}{focused}")
+        shot(page, "alternative-detail")
 
         print("capturing the privacy controls")
         page.goto(f"{BASE}/profiles/me")

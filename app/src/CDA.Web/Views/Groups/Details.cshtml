@@ -1,0 +1,173 @@
+@model CDA.Web.Models.GroupDetailsViewModel
+@{
+    ViewData["Title"] = "Alternative solution";
+    var group = Model.Group;
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-warning">@error</div>
+}
+
+<p class="mb-1">
+    <a asp-action="Index" asp-route-topicId="@Model.Topic.Id" class="text-decoration-none">
+        &larr; Alternative solutions for @Model.Topic.Subject
+    </a>
+</p>
+
+<div class="col-lg-9">
+    <h1 class="h3">@group.Description</h1>
+
+    <p class="text-muted">
+        assembled by
+        <a asp-controller="Profile" asp-action="Details" asp-route-id="@group.CreatedByUserId"
+           class="text-decoration-none">@group.CreatedByDisplayName</a>
+        @if (group.ByTrustedCiter)
+        {
+            <span class="badge bg-success" title="Among this topic's best-regarded citers of sources.">well-sourced</span>
+        }
+        &middot; @group.CreatedAtUtc.ToString("d MMM yyyy HH:mm") UTC
+        @if (group.EditedAtUtc is not null)
+        {
+            <span>&middot; edited</span>
+        }
+    </p>
+
+    @if (group.ImprovesDescription is not null)
+    {
+        <p class="text-muted">
+            A variant of
+            <a asp-action="Details" asp-route-topicId="@Model.Topic.Id" asp-route-id="@group.ImprovesGroupId">
+                @group.ImprovesDescription
+            </a>
+        </p>
+    }
+
+    @* The parts. This is the whole point: two alternatives that differ on one proposal share
+       every other line, so the disagreement is visible rather than buried. *@
+    <h2 class="h5 mt-4">The @group.ProposalCount proposals in this alternative</h2>
+    <ol class="list-group list-group-numbered mb-4">
+    @foreach (var member in group.Members)
+    {
+        <li class="list-group-item">
+            <a asp-controller="Proposals" asp-action="Details"
+               asp-route-topicId="@Model.Topic.Id" asp-route-id="@member.ProposalId"
+               class="text-decoration-none ps-1">@member.Text</a>
+            <small class="d-block text-muted ps-1">
+                @member.AuthorDisplayName
+                @if (member.CommentCount > 0)
+                {
+                    <span>&middot; @member.CommentCount comment@(member.CommentCount == 1 ? "" : "s") on this proposal</span>
+                }
+            </small>
+        </li>
+    }
+    </ol>
+
+    <div class="card my-4">
+        <div class="card-body">
+            <h2 class="h6 card-title">Do you support this alternative?</h2>
+
+            @if (group.ScoreSum is { } score)
+            {
+                <p class="mb-2">
+                    <span class="h4">@(score > 0 ? "+" : "")@score</span>
+                    <small class="text-muted">from @group.VoteCount vote@(group.VoteCount == 1 ? "" : "s")</small>
+                </p>
+            }
+            else
+            {
+                <p class="text-muted mb-2">This topic withholds its tallies until it closes.</p>
+            }
+
+            @if (group.CanVote)
+            {
+                <form method="post" asp-action="Vote" asp-route-topicId="@Model.Topic.Id"
+                      asp-route-id="@group.Id" class="d-inline">
+                    <button name="value" value="1" class="btn btn-sm @(group.MyVote == 1 ? "btn-success" : "btn-outline-success")">Support</button>
+                    <button name="value" value="0" class="btn btn-sm @(group.MyVote == 0 ? "btn-secondary" : "btn-outline-secondary")">Neutral</button>
+                    <button name="value" value="-1" class="btn btn-sm @(group.MyVote == -1 ? "btn-danger" : "btn-outline-danger")">Oppose</button>
+                </form>
+            }
+            else if (User.Identity?.IsAuthenticated != true)
+            {
+                <p class="mb-0"><a asp-controller="Account" asp-action="Login">Sign in</a> to vote.</p>
+            }
+        </div>
+    </div>
+
+    @if (Model.Topic.Phase == CDA.Domain.Topics.TopicPhase.Proposing && !Model.Topic.IsClosed)
+    {
+        <p>
+            <a asp-action="Assemble" asp-route-topicId="@Model.Topic.Id" asp-route-improves="@group.Id"
+               class="btn btn-outline-primary btn-sm">
+                Build a variant of this
+            </a>
+            <span class="form-text ms-2">
+                Disagree with part of it? Start from this combination and change what you would
+                do differently, rather than rejecting the whole thing.
+            </span>
+        </p>
+    }
+
+    @if (group.CanEdit)
+    {
+        <form method="post" asp-action="Edit" asp-route-topicId="@Model.Topic.Id" asp-route-id="@group.Id"
+              class="border rounded p-3 mb-4">
+            <label class="form-label">Reword the description</label>
+            <textarea name="description" class="form-control mb-2" rows="3" required
+                      maxlength="2000">@group.Description</textarea>
+            @if (group.VoteCount > 0)
+            {
+                <div class="alert alert-warning small">
+                    @group.VoteCount @(group.VoteCount == 1 ? "person has" : "people have") already voted
+                    on this alternative. Rewriting it now changes what they judged — if you are
+                    changing what it proposes rather than clarifying it,
+                    <a asp-action="Assemble" asp-route-topicId="@Model.Topic.Id" asp-route-improves="@group.Id">
+                        build a variant
+                    </a>
+                    instead.
+                </div>
+            }
+            <button class="btn btn-sm btn-primary">Save</button>
+        </form>
+    }
+
+    <h2 class="h5">Comments on this alternative</h2>
+
+    @if (Model.Comments.Count == 0)
+    {
+        <p class="text-muted fst-italic">No comments yet.</p>
+    }
+
+    @foreach (var comment in Model.Comments)
+    {
+        <div class="border-bottom py-2">
+            <div class="d-flex justify-content-between">
+                <strong>
+                    <a asp-controller="Profile" asp-action="Details" asp-route-id="@comment.AuthorId"
+                       class="text-decoration-none">@comment.AuthorDisplayName</a>
+                </strong>
+                <small class="text-muted">@comment.CreatedAtUtc.ToString("d MMM yyyy HH:mm") UTC</small>
+            </div>
+            @if (comment.IsDeleted)
+            {
+                <p class="text-muted fst-italic mb-0">This comment was withdrawn.</p>
+            }
+            else
+            {
+                <p class="mb-0" style="white-space: pre-wrap">@comment.Body</p>
+            }
+        </div>
+    }
+
+    @if (Model.CanComment)
+    {
+        <form method="post" asp-action="PostComment" asp-route-topicId="@Model.Topic.Id"
+              asp-route-id="@group.Id" class="mt-3">
+            <textarea name="body" class="form-control" rows="3" maxlength="8000" required
+                      placeholder="Comment on this combination…"></textarea>
+            <button class="btn btn-primary mt-2">Post comment</button>
+        </form>
+    }
+</div>

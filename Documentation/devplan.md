@@ -409,8 +409,21 @@ Decisions taken during the work:
 
 Deferred: the collapse recomputes per request. It is bounded by the number of active reports in one topic and is a single indexed query, but caching per (topic, threshold) is the obvious optimisation if a topic ever grows large enough to feel it.
 
-### Phase 7 — Groups / alternative solutions *(≈1.5 weeks)*
-Group creation from selected proposals, description, group voting and comments, group detail showing member proposals *and* their comments, default ordering by top-3 reference reputation then user sort, `ImprovesGroupId` marking. **Exit:** the central "assemble a solution" feature works.
+### Phase 7 — Groups / alternative solutions ✅ *done 2026-07-22*
+Alternatives assembled from the proposal pool, with descriptions, voting, comments, variant marking, and the ordering that finally puts Phase 5's citer standing to work.
+
+**Exit criteria met**, verified in a browser: two competing alternatives assembled from the same pool by different people, both on equal support, with the well-sourced author's listed first and flagged as such; the detail page shows every member proposal and how much discussion each has attracted. 237 tests pass.
+
+Decisions taken during the work:
+- **A description is required.** A bare selection of proposals leaves everyone guessing at the reasoning that picked them, and that reasoning is most of what distinguishes one alternative from another.
+- **At least two proposals.** A single one is already votable on its own; calling it an alternative solution adds nothing.
+- **Ordering puts the topic's best-regarded citers first**, and the page says whose and why. This is the payoff for Phase 5 — the advantage is deliberate, and hiding it would make the ordering look arbitrary.
+- **The priority flag is part of the keyset cursor.** Without it the second page would restart from the trusted citers' alternatives.
+- **Editing after votes exist is allowed but never silent.** The author may be answering criticism, so it is not forbidden; the page states how many people have already judged it and offers a variant instead.
+- **Variants point at what they refine, with `Restrict` on delete.** A refinement is still a solution in its own right, so removing the alternative it improved on must not take it too.
+- **The detail page carries each member proposal's comment count.** The argument about a combination is largely the argument about its parts, so the page points at where that argument is happening.
+
+**An EF translation failure worth noting.** Chaining two joins whose result selector calls a record constructor does not translate; it has to project to an anonymous shape and map afterwards. The integration tests caught it immediately, but it is the kind of thing that only fails at runtime — another entry in the case for the SQL-touching tests that CI does not run (§2.1).
 
 ### Phase 8 — Group evaluation *(≈1 week)*
 Weight × score matrix against requirements, per-user, re-editable, side-by-side comparison of two groups. **Exit:** a user can evaluate and compare alternatives before voting.

@@ -5,7 +5,7 @@
 > instance; the screenshots are generated from a live app, not mocked up. Features that do not
 > exist yet are listed in [Not built yet](#not-built-yet) rather than described as if they did.
 >
-> Last updated after **Phase 6**. See [devplan.md](devplan.md) for the delivery plan.
+> Last updated after **Phase 7**. See [devplan.md](devplan.md) for the delivery plan.
 
 ---
 
@@ -364,7 +364,77 @@ It is advice, not a rule — you are never prevented from voting as you see fit.
 
 ---
 
-## 9. Quick reference
+## 9. Alternative solutions
+
+This is what everything else has been building towards. An **alternative** is a set of
+proposals taken together: a complete answer, assembled from the shared pool rather than written
+from scratch by one person.
+
+![The alternative solutions for a topic](images/alternatives-list.png)
+
+### Why answers are assembled rather than written
+
+When someone writes a whole solution as an essay, everyone else can only accept or reject the
+lot. Assembled from proposals, two answers that differ on one point **share every other line** —
+so the disagreement is a difference in membership, plain to see, instead of something you have
+to extract by reading two documents side by side.
+
+It also means you are never forced to reject an answer you mostly agree with. Take the
+combination, change the part you would do differently, and put that forward as its own
+alternative.
+
+### Assembling one
+
+**Assemble an alternative** lists the whole pool with a checkbox against each proposal. Pick the
+ones that together make up your answer — the order does not matter, it is a set — and say what
+the combination amounts to.
+
+The description is **required**, and not as a formality. A bare list of proposals leaves
+everyone to guess at the reasoning that selected them, and that reasoning is most of what
+distinguishes one alternative from another.
+
+An alternative needs **at least two** proposals. A single proposal is already votable on its own.
+
+### Reading one
+
+![One alternative in full](images/alternative-detail.png)
+
+Opening an alternative shows every proposal in it, and how much discussion each has attracted —
+the argument about a combination is largely the argument about its parts, so the detail page
+points at where that argument is happening.
+
+Alternatives are voted on exactly like anything else: **Support**, **Neutral**, **Oppose**, one
+vote each.
+
+### Variants
+
+**Build a variant of this** starts a new alternative marked as a refinement of an existing one.
+Use it when you would keep most of an answer and change a detail.
+
+Marking refinements keeps the list readable. Six alternatives that are adjustments of two
+underlying approaches is a very different picture from six unrelated answers, and only the
+marking tells them apart.
+
+### Whose alternatives come first
+
+The list puts the alternatives of the topic's **best-regarded citers of sources** ahead of the
+rest, before the chosen ordering applies — and says so at the top of the page. In the screenshot
+above, Listener's alternative is listed first despite both having equal support.
+
+This is the payoff for the ratings in [Sources](#7-sources). The advantage is deliberate: the
+quality of a discussion rests on the quality of what it argues from, so whoever does the work of
+finding good evidence gets a small structural say in what gets read first.
+
+### Changing one after people have voted
+
+Only the person who assembled an alternative can change it. If votes have already been cast, the
+page says so and suggests building a variant instead — a rewritten description changes what
+those people judged. It is allowed, since the author may simply be answering criticism, but it
+is never silent.
+
+---
+
+## 10. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -383,6 +453,9 @@ It is advice, not a rule — you are never prevented from voting as you see fit.
 | A proposal I saw yesterday is gone. | You have folding turned on and someone reported it as a duplicate. Turn folding off, or raise the threshold, to see it again. |
 | Why does one entry show a bigger score than its own votes? | It stands for a group of duplicates, so it shows their combined support. |
 | Can I merge two proposals myself? | No. You report that they are duplicates; others decide whether they agree, and each reader chooses the threshold at which that folds them. |
+| Why is one alternative listed above another with the same score? | Its author is among the topic's best-regarded citers of sources. |
+| I agree with most of an alternative but not all of it. | Build a variant: keep the combination, change the part you would do differently. |
+| Why must I describe my alternative? | The selection alone does not explain the reasoning behind it, and that reasoning is most of what distinguishes one answer from another. |
 | I cannot find a topic someone mentioned. | It may be invite-only, in which case it is invisible until you are added. |
 
 ---
@@ -394,7 +467,6 @@ listed so this manual is not read as describing more than there is:
 
 | Feature | Phase |
 |---|---|
-| Grouping proposals into alternative solutions | 7 |
 | Scoring a group against the requirements with your own weightings | 8 |
 | Searching comments with AND/OR queries | 9 |
 | The qualitative table of how key factors influence each other | 11 |

@@ -1,0 +1,112 @@
+@model CDA.Web.Models.GroupListViewModel
+@using CDA.Infrastructure.Groups
+@{
+    ViewData["Title"] = $"Alternative solutions — {Model.Topic.Subject}";
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-warning">@error</div>
+}
+
+<p class="mb-1">
+    <a asp-controller="Topics" asp-action="Details" asp-route-id="@Model.Topic.Id"
+       class="text-decoration-none">&larr; @Model.Topic.Subject</a>
+</p>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Alternative solutions</h1>
+    @if (Model.CanAssemble)
+    {
+        <a asp-action="Assemble" asp-route-topicId="@Model.Topic.Id" class="btn btn-primary">
+            Assemble an alternative
+        </a>
+    }
+</div>
+
+<p class="text-muted col-lg-9">
+    Each of these is a set of proposals taken together — a complete answer built from the shared
+    pool. Two alternatives that differ on one point share everything else, so the disagreement
+    is visible instead of buried in two competing essays.
+</p>
+
+@if (Model.TopCiters.Count > 0)
+{
+    @* The advantage described in the platform's own design: people who find good evidence get
+       a small structural say in what gets read first. *@
+    <div class="alert alert-light border">
+        <strong>Listed first:</strong> alternatives from
+        @string.Join(", ", Model.TopCiters) —
+        the participants whose cited sources this topic rates most highly.
+    </div>
+}
+
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Sort == GroupSort.Score ? "active" : "")"
+           asp-action="Index" asp-route-topicId="@Model.Topic.Id" asp-route-sort="@GroupSort.Score">Most supported</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Sort == GroupSort.Newest ? "active" : "")"
+           asp-action="Index" asp-route-topicId="@Model.Topic.Id" asp-route-sort="@GroupSort.Newest">Newest</a>
+    </li>
+</ul>
+
+@if (Model.Groups.Count == 0)
+{
+    <p class="text-muted fst-italic">
+        Nothing assembled yet. Once there are proposals in the pool, anyone can combine them
+        into an alternative.
+    </p>
+}
+
+<div class="list-group mb-3">
+@foreach (var group in Model.Groups)
+{
+    <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+            <div class="pe-3">
+                <a asp-action="Details" asp-route-topicId="@Model.Topic.Id" asp-route-id="@group.Id"
+                   class="text-decoration-none d-block">@group.Description</a>
+                <small class="text-muted">
+                    @group.ProposalCount proposal@(group.ProposalCount == 1 ? "" : "s")
+                    &middot;
+                    <a asp-controller="Profile" asp-action="Details" asp-route-id="@group.CreatedByUserId"
+                       class="text-muted">@group.CreatedByDisplayName</a>
+                    @if (group.ByTrustedCiter)
+                    {
+                        <span class="badge bg-success" title="Among this topic's best-regarded citers of sources.">
+                            well-sourced
+                        </span>
+                    }
+                    @if (group.ImprovesGroupId is not null)
+                    {
+                        <span class="badge bg-secondary" title="A refinement of another alternative rather than a fresh answer.">
+                            variant
+                        </span>
+                    }
+                    &middot; @group.CommentCount comment@(group.CommentCount == 1 ? "" : "s")
+                </small>
+            </div>
+            <div class="text-end text-nowrap">
+                @if (group.ScoreSum is { } score)
+                {
+                    <span class="h5">@(score > 0 ? "+" : "")@score</span><br />
+                    <small class="text-muted">@group.VoteCount vote@(group.VoteCount == 1 ? "" : "s")</small>
+                }
+                else
+                {
+                    <small class="text-muted">counts hidden</small>
+                }
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+@if (Model.NextCursor is not null)
+{
+    <a class="btn btn-outline-secondary"
+       asp-action="Index" asp-route-topicId="@Model.Topic.Id" asp-route-sort="@Model.Sort"
+       asp-route-cursor="@Model.NextCursor">Show more</a>
+}

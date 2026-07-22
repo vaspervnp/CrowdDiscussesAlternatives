@@ -170,6 +170,71 @@ public sealed class CommentService(CdaDbContext database, IClock clock)
         return CommentResult.Ok;
     }
 
+    /// <summary>Posts a comment on an alternative solution.</summary>
+    public async Task<CommentResult> PostToGroupAsync(
+        Guid topicId,
+        Guid groupId,
+        Guid authorId,
+        string body,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return CommentResult.Refused("A comment cannot be empty.");
+        }
+
+        if (body.Length > Comment.BodyMaxLength)
+        {
+            return CommentResult.Refused($"A comment is limited to {Comment.BodyMaxLength} characters.");
+        }
+
+        var group = await database.ProposalGroups
+            .SingleOrDefaultAsync(g => g.Id == groupId && g.TopicId == topicId, cancellationToken);
+
+        if (group is null)
+        {
+            return CommentResult.Refused("No such alternative.");
+        }
+
+        var topic = await database.Topics
+            .AsNoTracking()
+            .SingleAsync(t => t.Id == topicId, cancellationToken);
+
+        var now = clock.UtcNow;
+
+        if (topic.IsClosedAt(now))
+        {
+            return CommentResult.Refused("This topic has closed.");
+        }
+
+        var isMember = await database.TopicMembers
+            .AnyAsync(m => m.TopicId == topicId && m.UserId == authorId, cancellationToken);
+
+        if (!isMember)
+        {
+            if (topic.Visibility != TopicVisibility.Public)
+            {
+                return CommentResult.Refused("Only members can take part in this topic.");
+            }
+
+            database.TopicMembers.Add(new TopicMember(topicId, authorId, TopicRole.Member, now));
+        }
+
+        database.Comments.Add(Comment.OnGroup(groupId, authorId, body, now));
+        group.RecordComment(now);
+
+        await database.SaveChangesAsync(cancellationToken);
+
+        return CommentResult.Ok;
+    }
+
+    /// <summary>Reads an alternative's comments, oldest first.</summary>
+    public Task<List<CommentView>> ForGroupAsync(
+        Guid groupId,
+        TopicViewer viewer,
+        CancellationToken cancellationToken = default) =>
+        ReadAsync(database.Comments.Where(c => c.GroupId == groupId), viewer, cancellationToken);
+
     /// <summary>Reads a proposal's comments, oldest first.</summary>
     public Task<List<CommentView>> ForProposalAsync(
         Guid proposalId,

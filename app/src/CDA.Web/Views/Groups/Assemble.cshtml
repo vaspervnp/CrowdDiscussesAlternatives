@@ -1,0 +1,83 @@
+@model CDA.Web.Models.AssembleGroupViewModel
+@{
+    ViewData["Title"] = "Assemble an alternative";
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-warning">@error</div>
+}
+
+<p class="mb-1">
+    <a asp-action="Index" asp-route-topicId="@Model.Topic.Id" class="text-decoration-none">
+        &larr; Alternative solutions
+    </a>
+</p>
+<h1>Assemble an alternative</h1>
+
+@if (Model.ImprovesDescription is not null)
+{
+    <div class="alert alert-info col-lg-9">
+        This will be marked as a <strong>variant</strong> of:
+        <em>@Model.ImprovesDescription</em>
+        <div class="small mt-1">
+            Marking refinements as such keeps the list readable — six alternatives that are
+            adjustments of two approaches is a different picture from six unrelated answers.
+        </div>
+    </div>
+}
+
+<p class="text-muted col-lg-9">
+    Pick the proposals that, taken together, make up your answer. The order does not matter —
+    it is a set, not a list.
+</p>
+
+<form method="post" class="col-lg-9">
+    <input type="hidden" name="improvesGroupId" value="@Model.ImprovesGroupId" />
+
+    <div class="mb-3">
+        <label class="form-label" for="description">What does this combination amount to?</label>
+        <textarea name="description" id="description" class="form-control" rows="3" required
+                  maxlength="2000"
+                  placeholder="Why these proposals belong together, and what the result achieves."></textarea>
+        <div class="form-text">
+            Required. A bare list leaves everyone guessing at the reasoning that picked these,
+            which is most of what tells one alternative from another.
+        </div>
+    </div>
+
+    <h2 class="h6">Proposals in the pool</h2>
+
+    @if (Model.Pool.Count == 0)
+    {
+        <p class="text-muted fst-italic">The pool is empty. Add some proposals first.</p>
+    }
+
+    <div class="list-group mb-3">
+    @foreach (var proposal in Model.Pool)
+    {
+        <label class="list-group-item d-flex gap-2">
+            <input class="form-check-input flex-shrink-0" type="checkbox"
+                   name="proposalIds" value="@proposal.Id" />
+            <span>
+                @proposal.Text
+                <small class="d-block text-muted">
+                    @proposal.AuthorDisplayName
+                    @if (proposal.ScoreSum is { } score)
+                    {
+                        <span>&middot; @(score > 0 ? "+" : "")@score</span>
+                    }
+                    @if (!proposal.IsLocked)
+                    {
+                        <span class="badge bg-warning text-dark">still editable</span>
+                    }
+                </small>
+            </span>
+        </label>
+    }
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create alternative</button>
+    <a asp-action="Index" asp-route-topicId="@Model.Topic.Id" class="btn btn-link">Cancel</a>
+    <div class="form-text">At least two proposals — a single one is already votable on its own.</div>
+</form>

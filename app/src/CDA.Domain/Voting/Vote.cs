@@ -45,6 +45,9 @@ public sealed class Vote
     public static Vote OnProposal(Guid proposalId, Guid userId, short value, DateTime castAtUtc) =>
         new(userId, value, castAtUtc) { ProposalId = proposalId };
 
+    public static Vote OnGroup(Guid groupId, Guid userId, short value, DateTime castAtUtc) =>
+        new(userId, value, castAtUtc) { GroupId = groupId };
+
     public static Vote OnSimilarity(Guid similarityId, Guid userId, short value, DateTime castAtUtc) =>
         new(userId, value, castAtUtc) { SimilarityId = similarityId };
 
@@ -77,6 +80,8 @@ public sealed class Vote
     public Guid? TopicId { get; private set; }
 
     public Guid? ProposalId { get; private set; }
+
+    public Guid? GroupId { get; private set; }
 
     public Guid? SimilarityId { get; private set; }
 

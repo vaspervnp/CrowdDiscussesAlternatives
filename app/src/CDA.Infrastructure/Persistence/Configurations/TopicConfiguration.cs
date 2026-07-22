@@ -1,3 +1,4 @@
+using CDA.Domain.Groups;
 using CDA.Domain.Proposals;
 using CDA.Domain.References;
 using CDA.Domain.Similarity;
@@ -59,7 +60,7 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
             table.HasCheckConstraint(
                 "CK_Votes_SingleTarget",
                 "(`TopicId` IS NOT NULL) + (`ProposalId` IS NOT NULL) + (`ReferenceId` IS NOT NULL) " +
-                "+ (`SimilarityId` IS NOT NULL) = 1");
+                "+ (`SimilarityId` IS NOT NULL) + (`GroupId` IS NOT NULL) = 1");
 
             // The aspect belongs to references and only to references: a topic vote with an
             // aspect, or a reference vote without one, would both be meaningless.
@@ -83,6 +84,10 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
             .HasDatabaseName("UX_Votes_User_Proposal");
 
         // Two votes per person per reference — one per aspect — so the aspect is part of the key.
+        builder.HasIndex(v => new { v.UserId, v.GroupId })
+            .IsUnique()
+            .HasDatabaseName("UX_Votes_User_Group");
+
         builder.HasIndex(v => new { v.UserId, v.SimilarityId })
             .IsUnique()
             .HasDatabaseName("UX_Votes_User_Similarity");
@@ -109,6 +114,11 @@ public sealed class VoteConfiguration : IEntityTypeConfiguration<Vote>
         builder.HasOne<SimilarityReport>()
             .WithMany()
             .HasForeignKey(v => v.SimilarityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<ProposalGroup>()
+            .WithMany()
+            .HasForeignKey(v => v.GroupId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

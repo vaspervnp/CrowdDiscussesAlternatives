@@ -1,4 +1,5 @@
 using CDA.Domain.Discussion;
+using CDA.Domain.Groups;
 using CDA.Domain.Proposals;
 using CDA.Domain.Similarity;
 using CDA.Domain.Topics;
@@ -36,7 +37,8 @@ public sealed class CommentConfiguration : IEntityTypeConfiguration<Comment>
             // or attached to two things at once.
             table.HasCheckConstraint(
                 "CK_Comments_SingleTarget",
-                "(`TopicId` IS NOT NULL) + (`ProposalId` IS NOT NULL) + (`SimilarityId` IS NOT NULL) = 1"));
+                "(`TopicId` IS NOT NULL) + (`ProposalId` IS NOT NULL) + (`SimilarityId` IS NOT NULL) " +
+                "+ (`GroupId` IS NOT NULL) = 1"));
 
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id).ValueGeneratedNever();
@@ -49,6 +51,7 @@ public sealed class CommentConfiguration : IEntityTypeConfiguration<Comment>
         builder.HasIndex(c => new { c.TopicId, c.CreatedAtUtc });
         builder.HasIndex(c => new { c.ProposalId, c.CreatedAtUtc });
         builder.HasIndex(c => new { c.SimilarityId, c.CreatedAtUtc });
+        builder.HasIndex(c => new { c.GroupId, c.CreatedAtUtc });
         builder.HasIndex(c => c.AuthorId);
 
         builder.HasOne<Topic>()
@@ -64,6 +67,11 @@ public sealed class CommentConfiguration : IEntityTypeConfiguration<Comment>
         builder.HasOne<SimilarityReport>()
             .WithMany()
             .HasForeignKey(c => c.SimilarityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<ProposalGroup>()
+            .WithMany()
+            .HasForeignKey(c => c.GroupId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
