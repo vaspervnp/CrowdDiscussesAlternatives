@@ -37,7 +37,7 @@ Concrete choices to fill the gaps:
 | Area | Choice | Why |
 |---|---|---|
 | Web framework | ASP.NET Core 10 — MVC controllers + Razor views, plus `[ApiController]` REST controllers in the same host | One auth pipeline, no CORS setup, simplest to run for an open-source demo. Split into separate hosts later if needed. |
-| ORM | EF Core 10 + `Pomelo.EntityFrameworkCore.MySql` | The de-facto MariaDB/MySQL provider for EF Core. **Verify a release matching EF Core 10 exists before Phase 0** — Pomelo has historically shipped a few months behind each EF Core major. |
+| ORM | **EF Core 9 + `Pomelo.EntityFrameworkCore.MySql` 9.0.0**, running on the .NET 10 runtime | See the note below — Pomelo has no EF Core 10 release yet, and MariaDB support matters more here than the EF major version. |
 | Schema management | EF Core migrations, applied via a dedicated migration step (never `EnsureCreated`) | Reproducible, reviewable schema history. |
 | Auth | ASP.NET Core Identity (EF stores) — cookie auth for MVC, JWT bearer for `/api/*` | Per-topic roles are *not* Identity roles (see §4.2). |
 | Search | MariaDB `FULLTEXT` indexes in **boolean mode** | Directly supports the required AND/OR comment search without a separate search engine. |
@@ -48,21 +48,80 @@ Concrete choices to fill the gaps:
 | Local dev | A **provided MariaDB instance** — no Docker, no local server install | The maintainer supplies a connection to an empty database. |
 | CI | GitHub Actions: build → unit tests → format check; integration tests gated on a DB being reachable | See the CI caveat in §2.1. |
 
-If Pomelo turns out not to have a matching release, the fallback is to stay on the latest EF Core major it does support while keeping the app itself on .NET 10 — EF Core N runs fine on a newer runtime.
+**Provider check (done, 2026-07-22).** NuGet's latest `Pomelo.EntityFrameworkCore.MySql` is **9.0.0**, targeting EF Core 9 — there is no EF Core 10 build. The options were:
+
+- **Pomelo 9 + EF Core 9 on .NET 10** *(chosen)* — EF Core 9 assemblies run fine on the .NET 10 runtime, so the app still gets an LTS runtime. Pomelo is the de-facto MariaDB provider: it models MariaDB explicitly via `ServerVersion.AutoDetect`/`MariaDbServerVersion` and tracks MariaDB-specific SQL. The cost is that EF Core 9 itself is past its support window, so the upgrade to Pomelo 10 should be taken as soon as it ships.
+- Oracle's `MySql.EntityFrameworkCore` **does** have a 10.0.x for EF Core 10, but it targets MySQL rather than MariaDB and diverges on exactly the things this schema leans on (JSON handling, index and full-text behaviour). Rejected: a supported EF major is not worth a provider that does not target our database.
+
+Revisit at the start of Phase 0 in case Pomelo 10 has shipped by then; the rest of the plan is unaffected either way.
 
 ### 2.1 Database access and configuration
 
-The database is an **existing, empty MariaDB instance provided by the maintainer**. There is no container to start and no server to install.
+The database is an **existing, empty MariaDB instance provided by the maintainer**, reachable over the public internet. There is no container to start and no server to install.
+
+**Verified server facts** (probed 2026-07-22 against the supplied credentials):
+
+| Property | Value | Consequence for the build |
+|---|---|---|
+| Version | MariaDB **11.4.3** (LTS, Debian) | Supports everything the plan needs. |
+| Schema | `CrowdDiscussesAlternatives`, **empty** (0 tables) | Migrations start from nothing, as assumed. |
+| Privileges | `ALL PRIVILEGES` on that schema **and** on a second schema (see below). **No global `CREATE DATABASE`.** | Settles the test-isolation question. |
+| TLS | TLS 1.3, with a certificate that passes full chain **and** hostname validation | Settled: the app connects with `SslMode=VerifyFull`; see below. |
+| Charset / collation | `utf8mb4` / `utf8mb4_general_ci` | Override per column to `utf8mb4_unicode_520_ci` — the best UCA collation this build offers. `general_ci` is a legacy byte-order collation and this is a multilingual platform. (MariaDB 11.4 predates the `uca1400` collations, so `unicode_520_ci` is the ceiling here.) |
+| Engine | InnoDB | Required for the `FULLTEXT` plan. **Verified working**: boolean-mode `AND`/`OR` queries returned correct results on a scratch table. |
+| `innodb_ft_min_token_size` | `3` (fixed; needs a server restart to change) | **Search cannot match 1–2 character terms.** The query parser must warn the user rather than silently return nothing. |
+| `ft_stopword_file` | built-in (English) | Common English words are unindexed. Only worth revisiting if English search quality disappoints. |
+| `sql_mode` | `STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION` | Strict — good. Note `ONLY_FULL_GROUP_BY` is off; do not rely on that, EF Core generates valid grouping anyway. |
+| Time zone | Server is `CEST`, `time_zone=SYSTEM`; `NOW()` is 2h ahead of `UTC_TIMESTAMP()` | **Store every timestamp as UTC from the application.** Never use server-side `NOW()`/`CURRENT_TIMESTAMP` defaults — the app clock is the single source of truth, injected via an `IClock`. |
+| `max_connections` | `151`, on a shared host | Cap the pool explicitly (`MaximumPoolSize=20`) so the app cannot exhaust a server it does not own. |
+| `lower_case_table_names` | `0` (case-sensitive) | Table naming must be consistent; pick one convention in the EF model and never vary it. |
+
+**Two schemas, both granted** (verified 2026-07-22):
+
+| Schema | Purpose | Grant |
+|---|---|---|
+| `CrowdDiscussesAlternatives` | development / runtime | `ALL PRIVILEGES WITH GRANT OPTION` |
+| `CrowdDiscussesAlternatives_Test` | integration tests, disposable | `ALL PRIVILEGES` |
+
+Both are empty and both default to `utf8mb4` / `utf8mb4_general_ci`, so the per-column collation override applies identically to each. `CREATE DATABASE` remains denied, which is fine — no further schemas are needed.
+
+**TLS — settled: `SslMode=VerifyFull`.** The originally supplied string ended with `SslMode=None`. Every mode was tested against the live server with **MySqlConnector** (the driver Pomelo sits on), reading `Ssl_cipher` from the session afterwards to confirm what actually happened rather than what was requested:
+
+| `SslMode` | Result | Session cipher |
+|---|---|---|
+| `None` | connects | **none — traffic unencrypted** |
+| `Preferred` | connects | TLS_AES_256_GCM_SHA384 |
+| `Required` | connects | TLS_AES_256_GCM_SHA384 |
+| `VerifyCA` | connects | TLS_AES_256_GCM_SHA384 |
+| **`VerifyFull`** | **connects** | TLS_AES_256_GCM_SHA384 |
+
+`VerifyFull` succeeding means the server presents a certificate that chains to a publicly trusted root *and* matches the hostname `<host>`. That is worth taking: `Required` encrypts but validates nothing, so it stops passive eavesdropping while remaining open to an active machine-in-the-middle; `VerifyFull` closes both. Since the strictest mode works at no cost, **the application uses `SslMode=VerifyFull` everywhere** — there is no reason to configure anything weaker.
+
+The connection string therefore has this shape (password from user secrets / environment, never from a file in the repo):
+
+```
+Server=<host>;Port=3306;Database=CrowdDiscussesAlternatives;User ID=<user>;Password=<secret>;SslMode=VerifyFull;MaximumPoolSize=20;
+```
+
+One operational caveat: `VerifyFull` will start failing if the server's certificate expires or the host is later addressed by an IP or an alias that the certificate does not cover. That failure is the setting doing its job — the fix is to renew or reissue the certificate, not to downgrade the mode. Worth a line in the eventual deployment notes so nobody "fixes" a future outage by setting `SslMode=None`.
 
 **Configuration:**
 - The connection string is **never committed**. `appsettings.json` ships a placeholder only.
-- Local development reads it from **.NET user secrets** (`dotnet user-secrets set "ConnectionStrings:Cda" "..."` on `CDA.Web`), which live outside the repo tree.
+- Local development reads it from **.NET user secrets** (`dotnet user-secrets set "ConnectionStrings:Cda" "..."` on `CDA.Web`), which live outside the repo tree. The repository is public — a committed credential is a disclosed credential.
 - Deployment/CI reads it from the environment variable `ConnectionStrings__Cda`.
 - `.gitignore` must cover `appsettings.*.Local.json` and any `*.env` from day one, before the first commit that touches configuration.
 
 **Schema ownership:** the app owns the whole database. Migrations are applied explicitly (`dotnet ef database update`, or a `--migrate` startup flag), never automatically on boot in a shared environment.
 
-**Integration tests** cannot use Testcontainers without Docker. Instead each test run creates a uniquely named schema on the same server (`cda_test_{guid}`), applies migrations to it, runs, then drops it. This requires the supplied account to hold `CREATE`/`DROP DATABASE` privileges — **if it does not**, the fallback is a single dedicated `cda_test` schema that is truncated between test classes, at the cost of losing parallel test execution. Confirm the privilege level before Phase 0.
+**Integration tests** run against `CrowdDiscussesAlternatives_Test`, never against the development schema. Docker and Testcontainers are not involved, and no schema is created per run. The fixture:
+
+1. reads its own connection string (`ConnectionStrings:CdaTest`) — a separate setting, so the dev string can never be reused by accident;
+2. **refuses to start unless the target database name ends in `_Test`**, failing with an explicit message;
+3. applies migrations once per run, then truncates all tables between test classes with `FOREIGN_KEY_CHECKS=0` around the sweep.
+
+Step 2 is a hard guard rather than a convention. Everything else here is reversible; a test run pointed at the wrong schema silently destroys the development database, so the check is worth the five lines. The full DDL cycle the fixture depends on — `CREATE TABLE ... FULLTEXT ... ENGINE=InnoDB`, `INSERT`, `TRUNCATE`, toggling `FOREIGN_KEY_CHECKS`, `DROP TABLE` — was executed successfully against the test schema on 2026-07-22.
+
+Because there is one shared test schema rather than one per run, database-touching test classes join a single xUnit collection so they do not run concurrently; pure unit tests stay outside it and keep parallelising. Using SQLite or the in-memory provider to sidestep this was rejected: ranking, keyset pagination and `FULLTEXT` search are the SQL-heavy parts most in need of coverage, and none of them behave the same off MariaDB — such tests would pass while the product broke.
 
 **CI caveat:** GitHub Actions service containers run on the hosted runner, not on a developer machine, so they remain a valid option for CI even though local Docker is off the table. Pointing CI at the shared provided database is not recommended — concurrent runs would trample each other's schemas. Decide between (a) a MariaDB service container in CI only, or (b) integration tests that run locally and are skipped in CI when no connection string is present.
 
@@ -310,14 +369,17 @@ Group trees / nested clustering for detailed solutions, availability calendar, S
 | 5 | Vote value 0 | **Distinct from no vote** — a recorded abstention | §4.2 Vote |
 | 6 | Group editing | **Editable, creator only** | §4.2 ProposalGroup |
 | 7 | Similarity threshold | **Per topic** default, user-overridable for their own view | §4.2 Topic, §5.1 |
+| 8 | Database host | **Provided remote MariaDB 11.4.3**, no Docker; verified empty and writable | §2.1 |
+| 9 | Schemas | **`CrowdDiscussesAlternatives`** for development, **`CrowdDiscussesAlternatives_Test`** for integration tests; both granted to `<user>`, both verified | §2.1 |
+| 10 | EF provider | **Pomelo 9 / EF Core 9 on the .NET 10 runtime** — Pomelo has no EF Core 10 build, and MariaDB support outweighs the EF major version | §2 |
+| 11 | Transport security | **`SslMode=VerifyFull`** — verified working against the live server, replacing the original `SslMode=None` | §2.1 |
 
 `Technical Documentation.docx` still names .NET 9 and should be updated to match decision 1, so the two documents do not contradict each other.
 
 ### Still open
 
-1. **Database privileges** — does the supplied account have `CREATE`/`DROP DATABASE`? This decides whether integration tests get an isolated schema per run or a single shared test schema (§2.1).
-2. **CI database strategy** — MariaDB service container in CI, or skip integration tests when no connection string is present (§2.1).
-3. **Pomelo availability** for EF Core 10 (§2).
+1. **CI database strategy** — MariaDB service container in CI, or skip integration tests when no connection string is present (§2.1). Pointing CI at the shared server is not viable: concurrent runs would truncate each other's tables.
+3. **Credential hygiene** — the `<user>` account is granted from any host (`<user>@%`) on a publicly reachable server, and its password has been shared in plaintext. Restrict the grant to known source hosts if the hosting allows it, and rotate the password before anything resembling production data exists.
 4. **Public topic write access** — on a Public topic, can any authenticated user post immediately, or do they join first and the facilitator approves? Assumed: join is automatic on first write, no approval.
 5. **Email delivery** — which SMTP provider, and is a sending domain available? Needed by Phase 12, not before.
 
