@@ -324,8 +324,23 @@ Decisions taken during the work:
 
 Deferred deliberately: **API bearer authentication**. The plan pairs cookies with JWT here, but there are no REST endpoints to protect until Phase 2, and the token scheme is better chosen against real endpoints than speculatively.
 
-### Phase 2 — Topics & importance ranking *(≈1 week)*
-Topic CRUD, `TopicMember` roles + authorization handlers, the generic **vote engine** (single `Vote` table + transactional counter updates) proven first on topics, topic list sorted by importance. **Exit:** topics can be created, joined and ranked; a user's vote is idempotent and limited to one row.
+### Phase 2 — Topics & importance ranking ✅ *done 2026-07-22*
+Topic creation with visibility and phases, `TopicMember` roles, the generic **vote engine** on the shared `Vote` table with transactional tally maintenance, keyset-paginated topic lists ordered by importance, and vote-count hiding.
+
+**Exit criteria met**, verified in a browser against the real database: a topic is created, joined and voted on; an anonymous visitor gets `ranked, counts hidden` where the facilitator sees `+1 from 1 vote`; an invite-only topic returns 404 to a non-member and never appears in their list. 126 tests pass.
+
+Decisions taken during the work:
+- **The tallies are updated with a relative `UPDATE … SET ScoreSum = ScoreSum + @delta`**, never read-modify-write. Several people voting on the same topic at once is the ordinary case, and read-modify-write silently loses all but one.
+- **The contended row is locked first.** The tally update runs *before* the vote row is written, so concurrent voters queue behind the topic row instead of acquiring two locks in opposite orders and deadlocking.
+- **Anything the execution strategy can retry must start from scratch.** The whole operation — read, compute delta, adjust tally, write row — runs inside the transaction with the change tracker cleared at the top of each attempt. See the bug below.
+- **Vote hiding is applied in the projection** (`TopicView`), producing nulls rather than leaving it to callers, so neither Razor nor the coming REST API can leak the figures. Ordering happens on the entity beforehand, so ranking survives with the numbers withheld. Facilitators are exempt: they need the figures and they chose to hide them.
+- **"Not found" and "not allowed to see" give the same answer**, otherwise the response confirms that a private topic exists.
+- **Phases only move forward.** Reopening a closed topic would resurrect votes cast on the understanding it had ended.
+- **Reading a public topic does not confer the right to rank it** — voting requires signing in, so that one vote means one person.
+
+**A bug worth recording.** The first implementation read the vote state outside the retry and wrapped only the writes. `SaveChanges` inserted the vote and the change tracker marked it saved; the tally update then deadlocked against another voter; the transaction rolled the insert back; the execution strategy retried and found nothing left to save — so the tally moved while the vote row vanished. The concurrency test caught it as **eight votes counted against three rows**. It would not have shown up under manual testing, and no unit test could have found it: it needs real concurrent transactions against real MariaDB. Worth remembering when weighing the CI decision in §2.1.
+
+Deferred: optimistic concurrency on topic edits (low contention, single facilitator) and the REST API surface, which arrives with bearer authentication in a later phase.
 
 ### Phase 3 — Requirements & discuss phase *(≈0.5 week)*
 Topic-level discussion thread, facilitator publishes the requirement list, `ClosesAt`, phase transitions. **Exit:** the DISCUSS → TOPIC flow from the Excel version works.

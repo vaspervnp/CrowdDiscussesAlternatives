@@ -13,6 +13,9 @@ public static class ClaimsPrincipalExtensions
         return Guid.TryParse(value, out var id) ? id : null;
     }
 
+    public static bool IsPlatformAdministrator(this ClaimsPrincipal principal) =>
+        principal.IsInRole(CdaRole.Administrator);
+
     /// <summary>
     /// Describes the caller for the profile privacy rules.
     /// </summary>

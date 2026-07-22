@@ -1,0 +1,89 @@
+@model CDA.Web.Models.TopicListViewModel
+@using CDA.Domain.Topics
+@using CDA.Infrastructure.Topics
+@{
+    ViewData["Title"] = "Topics";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Topics</h1>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-action="Create" class="btn btn-primary">Start a topic</a>
+    }
+</div>
+
+<p class="text-muted col-lg-9">
+    Ranked by how important participants judge them. Ranking matters here: a forum with
+    hundreds of undifferentiated threads spreads a crowd too thin to reach a conclusion on
+    any of them.
+</p>
+
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Sort == TopicSort.Importance ? "active" : "")"
+           asp-action="Index" asp-route-sort="@TopicSort.Importance">Most important</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Sort == TopicSort.Newest ? "active" : "")"
+           asp-action="Index" asp-route-sort="@TopicSort.Newest">Newest</a>
+    </li>
+</ul>
+
+@if (Model.Topics.Count == 0)
+{
+    <p class="text-muted">No topics yet.</p>
+}
+
+<div class="list-group">
+@foreach (var topic in Model.Topics)
+{
+    <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+            <div>
+                <a asp-action="Details" asp-route-id="@topic.Id" class="h5 d-block text-decoration-none">
+                    @topic.Subject
+                </a>
+                <small class="text-muted">
+                    @topic.Phase
+                    @if (topic.Visibility == TopicVisibility.InviteOnly)
+                    {
+                        <span class="badge bg-secondary">invite only</span>
+                    }
+                    @if (topic.IsClosed)
+                    {
+                        <span class="badge bg-dark">closed</span>
+                    }
+                    @if (topic.IsMember)
+                    {
+                        <span class="badge bg-info text-dark">member</span>
+                    }
+                </small>
+            </div>
+            <div class="text-end">
+                @* Null means the topic withholds its tallies while open — see TopicView. *@
+                @if (topic.ScoreSum is { } score)
+                {
+                    <span class="h5">@(score > 0 ? "+" : "")@score</span>
+                    <br />
+                    <small class="text-muted">@topic.VoteCount vote@(topic.VoteCount == 1 ? "" : "s")</small>
+                }
+                else
+                {
+                    <small class="text-muted" title="This topic hides its tallies until it closes.">
+                        ranked, counts hidden
+                    </small>
+                }
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+@if (Model.NextCursor is not null)
+{
+    <a class="btn btn-outline-secondary mt-3"
+       asp-action="Index" asp-route-sort="@Model.Sort" asp-route-cursor="@Model.NextCursor">
+        Show more
+    </a>
+}

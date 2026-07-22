@@ -2,6 +2,8 @@ using System.Net;
 using CDA.Application.Abstractions;
 using CDA.Infrastructure.Identity;
 using CDA.Infrastructure.Persistence;
+using CDA.Infrastructure.Topics;
+using CDA.Infrastructure.Voting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -53,6 +55,8 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddScoped<PresenceTracker>();
         services.AddScoped<UserAccountService>();
+        services.AddScoped<TopicService>();
+        services.AddScoped<TopicVotingService>();
 
         return services;
     }

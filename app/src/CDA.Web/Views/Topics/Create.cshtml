@@ -1,0 +1,60 @@
+@model CDA.Web.Models.CreateTopicViewModel
+@using CDA.Domain.Topics
+@{
+    ViewData["Title"] = "Start a topic";
+
+    var visibilityOptions = new List<SelectListItem>
+    {
+        new() { Value = nameof(TopicVisibility.Public), Text = "Anyone can read and join" },
+        new() { Value = nameof(TopicVisibility.InviteOnly), Text = "Only members I invite" },
+    };
+}
+
+<h1>Start a topic</h1>
+
+<form method="post" class="col-lg-8">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Subject" class="form-label"></label>
+        <input asp-for="Subject" class="form-control" />
+        <div class="form-text">
+            State the problem, not a solution to it — the solutions are what the crowd will build.
+        </div>
+        <span asp-validation-for="Subject" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="6"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-sm-7">
+            <label asp-for="Visibility" class="form-label"></label>
+            <select asp-for="Visibility" asp-items="visibilityOptions" class="form-select"></select>
+        </div>
+        <div class="col-sm-5">
+            <label asp-for="ClosesAt" class="form-label"></label>
+            <input asp-for="ClosesAt" class="form-control" type="date" />
+            <span asp-validation-for="ClosesAt" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="HideVoteCountsUntilClose" class="form-check-input" />
+        <label asp-for="HideVoteCountsUntilClose" class="form-check-label"></label>
+        <div class="form-text">
+            Ranking still works; only the numbers are withheld. Seeing a running total changes
+            how people vote.
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a asp-action="Index" class="btn btn-link">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,4 +1,6 @@
+using CDA.Domain.Topics;
 using CDA.Domain.Users;
+using CDA.Domain.Voting;
 using CDA.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,12 @@ public sealed class CdaDbContext(DbContextOptions<CdaDbContext> options)
     : IdentityDbContext<CdaUser, CdaRole, Guid>(options)
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+
+    public DbSet<Topic> Topics => Set<Topic>();
+
+    public DbSet<TopicMember> TopicMembers => Set<TopicMember>();
+
+    public DbSet<Vote> Votes => Set<Vote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
