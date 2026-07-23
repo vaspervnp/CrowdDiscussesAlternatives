@@ -3,6 +3,7 @@
     <Project Path="src/CDA.Application/CDA.Application.csproj" />
     <Project Path="src/CDA.Configure/CDA.Configure.csproj" />
     <Project Path="src/CDA.Domain/CDA.Domain.csproj" />
+    <Project Path="src/CDA.Migrate/CDA.Migrate.csproj" />
     <Project Path="src/CDA.Infrastructure/CDA.Infrastructure.csproj" />
     <Project Path="src/CDA.Web/CDA.Web.csproj" />
   </Folder>

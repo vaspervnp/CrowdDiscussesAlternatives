@@ -22,6 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\CDA.Web\CDA.Web.csproj" />
     <ProjectReference Include="..\..\src\CDA.Infrastructure\CDA.Infrastructure.csproj" />
+    <!-- The migrator applies real EF Core migrations, so it is exercised against a real database. -->
+    <ProjectReference Include="..\..\src\CDA.Migrate\CDA.Migrate.csproj" />
   </ItemGroup>
 
 </Project>

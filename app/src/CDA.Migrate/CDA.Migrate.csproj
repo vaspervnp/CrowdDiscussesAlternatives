@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- One friendly command name on the target, regardless of the project name. -->
+    <AssemblyName>cda-migrate</AssemblyName>
+    <RootNamespace>CDA.Migrate</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The DbContext, its migrations, the server version and the transport guard. -->
+    <ProjectReference Include="..\CDA.Infrastructure\CDA.Infrastructure.csproj" />
+    <!-- Reuses the user-secrets store location and the connection-string masking. -->
+    <ProjectReference Include="..\CDA.Configure\CDA.Configure.csproj" />
+  </ItemGroup>
+
+</Project>

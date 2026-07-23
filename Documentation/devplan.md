@@ -127,7 +127,7 @@ cda-configure --host <host> --user <user> --password <secret>
 
 It defaults `Port=3306`, `Database=CrowdDiscussesAlternatives` and `SslMode=VerifyFull`, refuses the same unverified-transport strings the app would refuse, and **opens a real connection to check the credentials before saving** (`--no-test` skips that; `--show` prints the saved value with the password masked). Because user secrets live in the running user's profile, the tool must be run as the same account the app runs as — it prints the exact file it wrote as a reminder.
 
-**Schema ownership:** the app owns the whole database. Migrations are applied explicitly (`dotnet ef database update`, or a `--migrate` startup flag), never automatically on boot in a shared environment.
+**Schema ownership:** the app owns the whole database. Migrations are applied explicitly, never automatically on boot in a shared environment. In development that is `dotnet ef database update`; on a self-contained deployment with no SDK it is the **`CDA.Migrate`** console tool (`cda-migrate`), which calls EF Core's own `MigrateAsync` on the migrations compiled into `CDA.Infrastructure`. It resolves the connection string exactly as the app does — `--connection`, then `ConnectionStrings__Cda`, then the user-secrets store `cda-configure` writes — and reuses the app's transport guard and server version, so it cannot migrate against a connection the app would then refuse. `cda-migrate status` lists applied and pending migrations without changing anything. The first-run order on a target is `cda-configure` → `cda-migrate` → start the app.
 
 **Integration tests** run against `CrowdDiscussesAlternatives_Test`, never against the development schema. Docker and Testcontainers are not involved, and no schema is created per run. The fixture:
 
@@ -156,6 +156,7 @@ app/
     CDA.Infrastructure/  # EF Core DbContext + migrations, email, file storage, localization store
     CDA.Web/             # ASP.NET Core host: MVC controllers + Razor views + /api controllers
     CDA.Configure/       # console tool: writes the DB connection string to user secrets (see 2.1)
+    CDA.Migrate/         # console tool: applies EF Core migrations without dotnet ef (see 2.1)
   tests/
     CDA.UnitTests/
     CDA.IntegrationTests/

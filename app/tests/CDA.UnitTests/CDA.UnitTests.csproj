@@ -24,6 +24,8 @@
     <ProjectReference Include="..\..\src\CDA.Web\CDA.Web.csproj" />
     <!-- The configurator's argument parsing and connection-string handling are pure functions. -->
     <ProjectReference Include="..\..\src\CDA.Configure\CDA.Configure.csproj" />
+    <!-- The migrator's connection-source precedence is a pure function. -->
+    <ProjectReference Include="..\..\src\CDA.Migrate\CDA.Migrate.csproj" />
   </ItemGroup>
 
 </Project>

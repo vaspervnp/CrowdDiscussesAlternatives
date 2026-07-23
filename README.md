@@ -72,6 +72,25 @@ the same unverified-transport strings the app refuses, and **opens a real connec
 credentials before saving** (`--no-test` skips that). User secrets live in the running user's
 profile, so run it as the **same account** the app runs as — it prints the exact file it wrote.
 
+With the connection string in place, bring the schema up to date with the **`CDA.Migrate`** tool,
+which applies the EF Core migrations without `dotnet ef` (they are compiled into the app):
+
+```bash
+dotnet publish src/CDA.Migrate -c Release -r <rid> --self-contained
+
+cda-migrate            # apply every pending migration
+cda-migrate status     # list what is applied and what is pending
+```
+
+It reads the connection string the same way the app does (`--connection` flag, then
+`ConnectionStrings__Cda`, then the saved user secret). So a first-time deployment is:
+
+```
+cda-configure  →  cda-migrate  →  start the app
+```
+
+and after deploying a build that adds migrations, run `cda-migrate` again before restarting.
+
 ## Tests
 
 ```bash
@@ -101,6 +120,7 @@ dotnet user-secrets set "ConnectionStrings:CdaTest" \
 | `src/CDA.Infrastructure` | EF Core context, migrations, external services. |
 | `src/CDA.Web` | MVC views and REST API in one host. |
 | `src/CDA.Configure` | Console tool to set the DB connection string on a machine without the SDK. |
+| `src/CDA.Migrate` | Console tool to apply the EF Core migrations without `dotnet ef`. |
 
 ## Adding a migration
 
