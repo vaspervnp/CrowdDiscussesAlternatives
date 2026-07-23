@@ -22,6 +22,8 @@
     <ProjectReference Include="..\..\src\CDA.Infrastructure\CDA.Infrastructure.csproj" />
     <!-- Likewise the display formatters: presentation concerns, but pure functions. -->
     <ProjectReference Include="..\..\src\CDA.Web\CDA.Web.csproj" />
+    <!-- The configurator's argument parsing and connection-string handling are pure functions. -->
+    <ProjectReference Include="..\..\src\CDA.Configure\CDA.Configure.csproj" />
   </ItemGroup>
 
 </Project>

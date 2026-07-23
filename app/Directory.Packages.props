@@ -20,6 +20,9 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.18" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.18" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+    <!-- Pomelo pulls this transitively; the configurator tool references it directly to test a
+         connection, so the version is pinned here to match what Pomelo resolves. -->
+    <PackageVersion Include="MySqlConnector" Version="2.4.0" />
     <!-- Identity's EF stores are pinned to 9.0.x with the rest of EF Core; the 10.x line
          would drag in EF Core 10 and break Pomelo. -->
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.18" />

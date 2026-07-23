@@ -8,6 +8,17 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The database connection string is a secret, kept out of both the repository and the deployment
+// folder. It is read from the user-secrets store — the same place `dotnet user-secrets set` uses
+// in development, and the place the bundled `cda-configure` tool writes to on a target machine
+// that has no .NET SDK. CreateBuilder only reads that store in Development, so it is added here
+// for every environment. Environment variables are re-added last so an explicit
+// ConnectionStrings__Cda still overrides the store, matching the deployment note in
+// Documentation/devplan.md section 2.1.
+builder.Configuration
+    .AddUserSecrets(typeof(Program).Assembly, optional: true, reloadOnChange: false)
+    .AddEnvironmentVariables();
+
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)

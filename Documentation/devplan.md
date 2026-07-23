@@ -109,8 +109,23 @@ One operational caveat: `VerifyFull` will start failing if the server's certific
 **Configuration:**
 - The connection string is **never committed**. `appsettings.json` ships a placeholder only.
 - Local development reads it from **.NET user secrets** (`dotnet user-secrets set "ConnectionStrings:Cda" "..."` on `CDA.Web`), which live outside the repo tree. A committed credential is a disclosed credential: git history outlives any later deletion, and the project is intended to be open-sourced, so the repository's current visibility is not what makes this rule worth keeping.
-- Deployment/CI reads it from the environment variable `ConnectionStrings__Cda`.
+- The web app loads the user-secrets store in **every** environment, not only Development (`AddUserSecrets` is added explicitly in `Program.cs`), so a deployed instance can be configured the same way. Environment variables are re-applied last, so an explicit `ConnectionStrings__Cda` still overrides the store.
+- Deployment/CI can still read it from the environment variable `ConnectionStrings__Cda`.
 - `.gitignore` must cover `appsettings.*.Local.json` and any `*.env` from day one, before the first commit that touches configuration.
+
+**Configuring a self-contained deployment (`CDA.Configure`):** the target machine runs a self-contained publish and has no .NET SDK, so `dotnet user-secrets` is unavailable there. The `src/CDA.Configure` console tool does the same job without it — it writes `ConnectionStrings:Cda` into the very user-secrets file the app reads (`%APPDATA%\Microsoft\UserSecrets\cda-web-secrets\secrets.json` on Windows, `~/.microsoft/usersecrets/cda-web-secrets/secrets.json` elsewhere), keyed by the same `UserSecretsId` as `CDA.Web`. Publish it alongside the app:
+
+```
+dotnet publish src/CDA.Configure -c Release -r <rid> --self-contained
+```
+
+Then on the target, either run the wizard (`cda-configure`) or pass flags:
+
+```
+cda-configure --host <host> --user <user> --password <secret>
+```
+
+It defaults `Port=3306`, `Database=CrowdDiscussesAlternatives` and `SslMode=VerifyFull`, refuses the same unverified-transport strings the app would refuse, and **opens a real connection to check the credentials before saving** (`--no-test` skips that; `--show` prints the saved value with the password masked). Because user secrets live in the running user's profile, the tool must be run as the same account the app runs as — it prints the exact file it wrote as a reminder.
 
 **Schema ownership:** the app owns the whole database. Migrations are applied explicitly (`dotnet ef database update`, or a `--migrate` startup flag), never automatically on boot in a shared environment.
 
@@ -140,6 +155,7 @@ app/
     CDA.Application/     # use-case services, DTOs, interfaces, validators
     CDA.Infrastructure/  # EF Core DbContext + migrations, email, file storage, localization store
     CDA.Web/             # ASP.NET Core host: MVC controllers + Razor views + /api controllers
+    CDA.Configure/       # console tool: writes the DB connection string to user secrets (see 2.1)
   tests/
     CDA.UnitTests/
     CDA.IntegrationTests/
