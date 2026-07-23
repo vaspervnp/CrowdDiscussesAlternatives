@@ -8,6 +8,20 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* Sets the colour theme before the first paint, so a dark-mode reader never sees a flash of
+       the light theme. Reads the saved choice from the cookie the switch writes; with no choice
+       made yet, it follows the operating system. Deliberately inline and first in <head> — a
+       deferred script would run too late to matter. *@
+    <script>
+        (function () {
+            try {
+                var m = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+                var theme = m ? decodeURIComponent(m[1])
+                    : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch (e) { /* the default light theme is a fine fallback */ }
+        })();
+    </script>
     <title>@ViewData["Title"] - @L["Crowd Discusses Alternatives"]</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -17,7 +31,8 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        @* bg-body-tertiary rather than a fixed bg-white, so the bar follows the theme. *@
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm bg-body-tertiary border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">@L["Crowd Discusses Alternatives"]</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -27,17 +42,18 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">@L["Home"]</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">@L["Home"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Topics" asp-action="Index">@L["Topics"]</a>
+                            <a class="nav-link" asp-area="" asp-controller="Topics" asp-action="Index">@L["Topics"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">@L["Privacy"]</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">@L["Privacy"]</a>
                         </li>
                     </ul>
                     <partial name="_LoginPartial" />
                     <partial name="_LanguagePartial" model="returnUrl" />
+                    <partial name="_ThemePartial" />
                 </div>
             </div>
         </nav>

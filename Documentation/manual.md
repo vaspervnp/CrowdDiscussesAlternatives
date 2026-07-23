@@ -728,7 +728,23 @@ always usable, even mid-translation.
 
 ---
 
-## 17. Quick reference
+## 17. Light or dark
+
+Next to the language menu is a **switch** for a dark colour theme. Flip it and the whole
+interface turns dark immediately — no reload — and the choice is remembered on this device, so
+every page stays dark until you switch back.
+
+![The interface in dark mode](images/topic-dark.png)
+
+If you have never touched the switch, the site follows your **device's** own setting: a phone or
+computer set to dark mode gets the dark theme from the first page, with no flash of white in
+between. The switch overrides that whenever you want the opposite.
+
+Like the language, the theme needs no account and works signed out.
+
+---
+
+## 18. Quick reference
 
 | Question | Answer |
 |---|---|
@@ -769,6 +785,8 @@ always usable, even mid-translation.
 | How do I read the site in Greek? | Pick it from the 🌐 Language menu in the top bar. The choice sticks on this device. |
 | Why is the topic still in English after I switched to Greek? | Only the interface is translated. What people wrote — subjects, proposals, comments — stays in the language they typed. |
 | The Greek for something is wrong. | An administrator can fix it on the Translations screen; the change shows at once. |
+| How do I turn on dark mode? | Use the switch next to the 🌐 Language menu. It sticks on this device. |
+| The site is dark and I never asked for that. | It is following your device's dark-mode setting. Flip the switch to force light. |
 
 ---
 

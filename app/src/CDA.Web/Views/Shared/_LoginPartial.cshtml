@@ -21,7 +21,7 @@
     var unreadMessages = await Messages.UnreadCountAsync(me);
 
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">
+        <a class="nav-link" asp-controller="Notifications" asp-action="Index">
             @L["Notifications"]
             @if (unreadNotifications > 0)
             {
@@ -30,7 +30,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Messages" asp-action="Index">
+        <a class="nav-link" asp-controller="Messages" asp-action="Index">
             @L["Messages"]
             @if (unreadMessages > 0)
             {
@@ -39,28 +39,28 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Profile" asp-action="Edit">@L["My profile"]</a>
+        <a class="nav-link" asp-controller="Profile" asp-action="Edit">@L["My profile"]</a>
     </li>
     @if (User.IsInRole(CdaRole.Administrator))
     {
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-controller="Localization" asp-action="Index">@L["Translations"]</a>
+            <a class="nav-link" asp-controller="Localization" asp-action="Index">@L["Translations"]</a>
         </li>
     }
     <li class="nav-item">
         @* A POST, so that a link on another site cannot sign the user out. *@
         <form method="post" asp-controller="Account" asp-action="Logout">
-            <button type="submit" class="nav-link btn btn-link text-dark">@L["Sign out"]</button>
+            <button type="submit" class="nav-link btn btn-link">@L["Sign out"]</button>
         </form>
     </li>
 }
 else
 {
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">@L["Register"]</a>
+        <a class="nav-link" asp-controller="Account" asp-action="Register">@L["Register"]</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">@L["Sign in"]</a>
+        <a class="nav-link" asp-controller="Account" asp-action="Login">@L["Sign in"]</a>
     </li>
 }
 </ul>

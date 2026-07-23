@@ -1,0 +1,12 @@
+@* The dark-mode switch. It carries no server state and needs no round trip: site.js flips
+   data-bs-theme on <html> live and writes the cookie the head script reads next time. Its
+   checked state is synced by site.js on load, since the theme is only known there (the head
+   script may have chosen it from the operating system, which the server cannot see). *@
+<div class="form-check form-switch text-body d-flex align-items-center ms-sm-2 my-1 my-sm-0">
+    <input class="form-check-input me-2" type="checkbox" role="switch" id="theme-switch"
+           aria-label="@L["Dark mode"]" />
+    <label class="form-check-label" for="theme-switch">
+        <span class="theme-switch-icon" aria-hidden="true"></span>
+        <span class="d-sm-none">@L["Dark mode"]</span>
+    </label>
+</div>

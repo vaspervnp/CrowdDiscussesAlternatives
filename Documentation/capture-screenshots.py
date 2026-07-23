@@ -546,6 +546,15 @@ def main():
         page.goto(f"{BASE}/Account/Register")
         shot(page, "register")
 
+        print("capturing dark mode")
+        # The switch writes this cookie; setting it directly is the same effect, and the head
+        # script applies it before the page paints.
+        context.add_cookies([{"name": "theme", "value": "dark", "url": BASE}])
+        page.goto(songs)
+        shot(page, "topic-dark")
+        # Back to light so the Greek captures below are in the default theme.
+        context.add_cookies([{"name": "theme", "value": "light", "url": BASE}])
+
         print("capturing the interface in Greek")
         # The framework culture cookie the language switcher writes; setting it directly is the
         # same effect as clicking Ελληνικά, and it persists across the pages below. Only the

@@ -20,7 +20,7 @@
 @foreach (var message in Model.Messages)
 {
     <div class="d-flex @(message.Mine ? "justify-content-end" : "")">
-        <div class="border rounded p-2 mb-2 @(message.Mine ? "bg-light" : "")" style="max-width: 32rem">
+        <div class="border rounded p-2 mb-2 @(message.Mine ? "bg-body-secondary" : "")" style="max-width: 32rem">
             <p class="mb-1" style="white-space: pre-wrap">@message.Body</p>
             <small class="text-muted">
                 @message.SentAtUtc.ToString("d MMM yyyy HH:mm") UTC

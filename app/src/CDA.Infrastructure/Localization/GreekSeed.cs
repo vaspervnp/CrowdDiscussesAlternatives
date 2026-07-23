@@ -34,6 +34,7 @@ public static class GreekSeed
             ["Language"] = "Γλώσσα",
             ["English"] = "Αγγλικά",
             ["Greek"] = "Ελληνικά",
+            ["Dark mode"] = "Σκοτεινό θέμα",
 
             // --- common actions and words ---
             ["Save"] = "Αποθήκευση",
