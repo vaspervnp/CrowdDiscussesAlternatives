@@ -46,6 +46,32 @@ dotnet run --project src/CDA.Web
 `GET /health` reports whether the database is reachable. In development, the OpenAPI document
 is served at `/openapi/v1.json`.
 
+## Configuring a self-contained deployment
+
+On a target machine you would publish the app **self-contained**, so there is no .NET SDK there
+and `dotnet user-secrets` is unavailable. The **`CDA.Configure`** console tool does the same job
+without it: it writes `ConnectionStrings:Cda` into the very user-secrets file the app reads
+(`%APPDATA%\Microsoft\UserSecrets\cda-web-secrets\secrets.json` on Windows,
+`~/.microsoft/usersecrets/cda-web-secrets/secrets.json` elsewhere), so the credential stays out
+of both the deployment folder and the repository. The web app loads that store in every
+environment, not just development.
+
+Publish it alongside the app, then run it on the target:
+
+```bash
+dotnet publish src/CDA.Configure -c Release -r <rid> --self-contained
+
+cda-configure                                              # interactive wizard
+cda-configure --host <host> --user <user> --password <secret>
+cda-configure --show      # print the saved value, password masked
+cda-configure --path      # print the path to the secrets file
+```
+
+It defaults `Port=3306`, `Database=CrowdDiscussesAlternatives` and `SslMode=VerifyFull`, refuses
+the same unverified-transport strings the app refuses, and **opens a real connection to check the
+credentials before saving** (`--no-test` skips that). User secrets live in the running user's
+profile, so run it as the **same account** the app runs as — it prints the exact file it wrote.
+
 ## Tests
 
 ```bash
@@ -74,6 +100,7 @@ dotnet user-secrets set "ConnectionStrings:CdaTest" \
 | `src/CDA.Application` | Use cases, DTOs, abstractions. |
 | `src/CDA.Infrastructure` | EF Core context, migrations, external services. |
 | `src/CDA.Web` | MVC views and REST API in one host. |
+| `src/CDA.Configure` | Console tool to set the DB connection string on a machine without the SDK. |
 
 ## Adding a migration
 
